@@ -1,0 +1,10 @@
+{
+  "name": "travel-weather-map",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "build": "node scripts/build-data.js",
+    "build:fixture": "node scripts/build-data.js --fixture"
+  }
+}

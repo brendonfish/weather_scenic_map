@@ -1,0 +1,2979 @@
+{
+ "success": "true",
+ "result": {
+  "resource_id": "F-D0047-037",
+  "fields": []
+ },
+ "records": {
+  "Locations": [
+   {
+    "DatasetDescription": "臺灣各鄉鎮市區預報資料",
+    "LocationsName": "臺東縣",
+    "Dataid": "D0047-037",
+    "Location": [
+     {
+      "LocationName": "卑南鄉",
+      "WeatherElement": [
+       {
+        "ElementName": "3小時降雨機率",
+        "Time": [
+         {
+          "StartTime": "2026-11-19T06:00:00+08:00",
+          "EndTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T09:00:00+08:00",
+          "EndTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T12:00:00+08:00",
+          "EndTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T15:00:00+08:00",
+          "EndTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T18:00:00+08:00",
+          "EndTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T21:00:00+08:00",
+          "EndTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T00:00:00+08:00",
+          "EndTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T03:00:00+08:00",
+          "EndTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T06:00:00+08:00",
+          "EndTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T09:00:00+08:00",
+          "EndTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T12:00:00+08:00",
+          "EndTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T15:00:00+08:00",
+          "EndTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T18:00:00+08:00",
+          "EndTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T21:00:00+08:00",
+          "EndTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T00:00:00+08:00",
+          "EndTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T03:00:00+08:00",
+          "EndTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T06:00:00+08:00",
+          "EndTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T09:00:00+08:00",
+          "EndTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T12:00:00+08:00",
+          "EndTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T15:00:00+08:00",
+          "EndTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T18:00:00+08:00",
+          "EndTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T21:00:00+08:00",
+          "EndTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T00:00:00+08:00",
+          "EndTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T03:00:00+08:00",
+          "EndTime": "2026-11-22T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "ElementName": "體感溫度",
+        "Time": [
+         {
+          "DataTime": "2026-11-19T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "20"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "15"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "15"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "17"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "14"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "16"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "15"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "14"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "17"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "16"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "20"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "21"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "16"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "LocationName": "成功鎮",
+      "WeatherElement": [
+       {
+        "ElementName": "3小時降雨機率",
+        "Time": [
+         {
+          "StartTime": "2026-11-19T06:00:00+08:00",
+          "EndTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T09:00:00+08:00",
+          "EndTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T12:00:00+08:00",
+          "EndTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T15:00:00+08:00",
+          "EndTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T18:00:00+08:00",
+          "EndTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T21:00:00+08:00",
+          "EndTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T00:00:00+08:00",
+          "EndTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T03:00:00+08:00",
+          "EndTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T06:00:00+08:00",
+          "EndTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T09:00:00+08:00",
+          "EndTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T12:00:00+08:00",
+          "EndTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T15:00:00+08:00",
+          "EndTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T18:00:00+08:00",
+          "EndTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T21:00:00+08:00",
+          "EndTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T00:00:00+08:00",
+          "EndTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T03:00:00+08:00",
+          "EndTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T06:00:00+08:00",
+          "EndTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T09:00:00+08:00",
+          "EndTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T12:00:00+08:00",
+          "EndTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T15:00:00+08:00",
+          "EndTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T18:00:00+08:00",
+          "EndTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T21:00:00+08:00",
+          "EndTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T00:00:00+08:00",
+          "EndTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T03:00:00+08:00",
+          "EndTime": "2026-11-22T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "ElementName": "體感溫度",
+        "Time": [
+         {
+          "DataTime": "2026-11-19T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "20"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "17"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "16"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "15"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "20"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "16"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "14"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "15"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "21"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "15"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "14"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "14"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "20"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "LocationName": "東河鄉",
+      "WeatherElement": [
+       {
+        "ElementName": "3小時降雨機率",
+        "Time": [
+         {
+          "StartTime": "2026-11-19T06:00:00+08:00",
+          "EndTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T09:00:00+08:00",
+          "EndTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T12:00:00+08:00",
+          "EndTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T15:00:00+08:00",
+          "EndTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T18:00:00+08:00",
+          "EndTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T21:00:00+08:00",
+          "EndTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T00:00:00+08:00",
+          "EndTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T03:00:00+08:00",
+          "EndTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T06:00:00+08:00",
+          "EndTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T09:00:00+08:00",
+          "EndTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T12:00:00+08:00",
+          "EndTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T15:00:00+08:00",
+          "EndTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T18:00:00+08:00",
+          "EndTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T21:00:00+08:00",
+          "EndTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T00:00:00+08:00",
+          "EndTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T03:00:00+08:00",
+          "EndTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T06:00:00+08:00",
+          "EndTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T09:00:00+08:00",
+          "EndTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T12:00:00+08:00",
+          "EndTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T15:00:00+08:00",
+          "EndTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T18:00:00+08:00",
+          "EndTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T21:00:00+08:00",
+          "EndTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T00:00:00+08:00",
+          "EndTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T03:00:00+08:00",
+          "EndTime": "2026-11-22T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "ElementName": "體感溫度",
+        "Time": [
+         {
+          "DataTime": "2026-11-19T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "11"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "5"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "5"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "7"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "11"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "7"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "11"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "5"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "11"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "LocationName": "池上鄉",
+      "WeatherElement": [
+       {
+        "ElementName": "3小時降雨機率",
+        "Time": [
+         {
+          "StartTime": "2026-11-19T06:00:00+08:00",
+          "EndTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T09:00:00+08:00",
+          "EndTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T12:00:00+08:00",
+          "EndTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T15:00:00+08:00",
+          "EndTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T18:00:00+08:00",
+          "EndTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T21:00:00+08:00",
+          "EndTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T00:00:00+08:00",
+          "EndTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T03:00:00+08:00",
+          "EndTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T06:00:00+08:00",
+          "EndTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T09:00:00+08:00",
+          "EndTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T12:00:00+08:00",
+          "EndTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T15:00:00+08:00",
+          "EndTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T18:00:00+08:00",
+          "EndTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T21:00:00+08:00",
+          "EndTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T00:00:00+08:00",
+          "EndTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T03:00:00+08:00",
+          "EndTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T06:00:00+08:00",
+          "EndTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T09:00:00+08:00",
+          "EndTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T12:00:00+08:00",
+          "EndTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T15:00:00+08:00",
+          "EndTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T18:00:00+08:00",
+          "EndTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T21:00:00+08:00",
+          "EndTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T00:00:00+08:00",
+          "EndTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T03:00:00+08:00",
+          "EndTime": "2026-11-22T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "ElementName": "體感溫度",
+        "Time": [
+         {
+          "DataTime": "2026-11-19T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "20"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "14"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "17"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "14"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "17"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "16"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "20"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "21"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "18"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "17"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "16"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "20"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "19"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "14"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "22"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "15"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "16"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "LocationName": "臺東市",
+      "WeatherElement": [
+       {
+        "ElementName": "3小時降雨機率",
+        "Time": [
+         {
+          "StartTime": "2026-11-19T06:00:00+08:00",
+          "EndTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T09:00:00+08:00",
+          "EndTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T12:00:00+08:00",
+          "EndTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T15:00:00+08:00",
+          "EndTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T18:00:00+08:00",
+          "EndTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T21:00:00+08:00",
+          "EndTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T00:00:00+08:00",
+          "EndTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T03:00:00+08:00",
+          "EndTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T06:00:00+08:00",
+          "EndTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T09:00:00+08:00",
+          "EndTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T12:00:00+08:00",
+          "EndTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T15:00:00+08:00",
+          "EndTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "30"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T18:00:00+08:00",
+          "EndTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T21:00:00+08:00",
+          "EndTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "20"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T00:00:00+08:00",
+          "EndTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T03:00:00+08:00",
+          "EndTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T06:00:00+08:00",
+          "EndTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T09:00:00+08:00",
+          "EndTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T12:00:00+08:00",
+          "EndTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T15:00:00+08:00",
+          "EndTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T18:00:00+08:00",
+          "EndTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T21:00:00+08:00",
+          "EndTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T00:00:00+08:00",
+          "EndTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T03:00:00+08:00",
+          "EndTime": "2026-11-22T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "ElementName": "體感溫度",
+        "Time": [
+         {
+          "DataTime": "2026-11-19T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "11"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "5"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "7"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "LocationName": "關山鎮",
+      "WeatherElement": [
+       {
+        "ElementName": "3小時降雨機率",
+        "Time": [
+         {
+          "StartTime": "2026-11-19T06:00:00+08:00",
+          "EndTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T09:00:00+08:00",
+          "EndTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T12:00:00+08:00",
+          "EndTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T15:00:00+08:00",
+          "EndTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T18:00:00+08:00",
+          "EndTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T21:00:00+08:00",
+          "EndTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "100"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T00:00:00+08:00",
+          "EndTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T03:00:00+08:00",
+          "EndTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T06:00:00+08:00",
+          "EndTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T09:00:00+08:00",
+          "EndTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T12:00:00+08:00",
+          "EndTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T15:00:00+08:00",
+          "EndTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T18:00:00+08:00",
+          "EndTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "0"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T21:00:00+08:00",
+          "EndTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "10"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T00:00:00+08:00",
+          "EndTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "70"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T03:00:00+08:00",
+          "EndTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T06:00:00+08:00",
+          "EndTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "70"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T09:00:00+08:00",
+          "EndTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T12:00:00+08:00",
+          "EndTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T15:00:00+08:00",
+          "EndTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T18:00:00+08:00",
+          "EndTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T21:00:00+08:00",
+          "EndTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T00:00:00+08:00",
+          "EndTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T03:00:00+08:00",
+          "EndTime": "2026-11-22T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "ElementName": "體感溫度",
+        "Time": [
+         {
+          "DataTime": "2026-11-19T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "7"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "5"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "7"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "5"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     },
+     {
+      "LocationName": "鹿野鄉",
+      "WeatherElement": [
+       {
+        "ElementName": "3小時降雨機率",
+        "Time": [
+         {
+          "StartTime": "2026-11-19T06:00:00+08:00",
+          "EndTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "60"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T09:00:00+08:00",
+          "EndTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "60"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T12:00:00+08:00",
+          "EndTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "60"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T15:00:00+08:00",
+          "EndTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T18:00:00+08:00",
+          "EndTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "60"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-19T21:00:00+08:00",
+          "EndTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "70"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T00:00:00+08:00",
+          "EndTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T03:00:00+08:00",
+          "EndTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T06:00:00+08:00",
+          "EndTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T09:00:00+08:00",
+          "EndTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T12:00:00+08:00",
+          "EndTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "70"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T15:00:00+08:00",
+          "EndTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "90"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T18:00:00+08:00",
+          "EndTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "80"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-20T21:00:00+08:00",
+          "EndTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "70"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T00:00:00+08:00",
+          "EndTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T03:00:00+08:00",
+          "EndTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "60"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T06:00:00+08:00",
+          "EndTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "60"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T09:00:00+08:00",
+          "EndTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T12:00:00+08:00",
+          "EndTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T15:00:00+08:00",
+          "EndTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T18:00:00+08:00",
+          "EndTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "40"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-21T21:00:00+08:00",
+          "EndTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "50"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T00:00:00+08:00",
+          "EndTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "70"
+           }
+          ]
+         },
+         {
+          "StartTime": "2026-11-22T03:00:00+08:00",
+          "EndTime": "2026-11-22T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ProbabilityOfPrecipitation": "70"
+           }
+          ]
+         }
+        ]
+       },
+       {
+        "ElementName": "體感溫度",
+        "Time": [
+         {
+          "DataTime": "2026-11-19T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "5"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "11"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "7"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-19T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "5"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "11"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "6"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-20T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "11"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "9"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T06:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T09:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T12:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T15:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "10"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T18:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "7"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-21T21:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "4"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T00:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "8"
+           }
+          ]
+         },
+         {
+          "DataTime": "2026-11-22T03:00:00+08:00",
+          "ElementValue": [
+           {
+            "ApparentTemperature": "12"
+           }
+          ]
+         }
+        ]
+       }
+      ]
+     }
+    ]
+   }
+  ]
+ }
+}
