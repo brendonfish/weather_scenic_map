@@ -254,7 +254,7 @@ test('W-13 氣象署回傳沒有任何鄉鎮資料時，當成抓取失敗', () 
     /沒有鄉鎮資料/,
   );
   assert.match(checkResponse({ success: 'false' }), /success/);
-  assert.equal(checkResponse(fakeResponse('臺北市', '信義區', [], [])), null);
+  assert.equal(checkResponse(fakeResponse('臺北市', '信義區', [[t(D, '09'), t(D, '12'), 10]], [[t(D, '09'), 18]])), null);
 });
 
 test('W-14 有鄉鎮但沒有降雨機率（因子沒有或改名）時，也當成抓取失敗', () => {
@@ -270,7 +270,7 @@ test('W-14 有鄉鎮但沒有降雨機率（因子沒有或改名）時，也當
   const partial = fakeResponse('臺北市', '信義區', [[t(D, '09'), t(D, '12'), 10]], []);
   partial.records.Locations[0].Location.push({ LocationName: '萬華區', WeatherElement: [] });
   assert.match(checkResponse(partial), /萬華區/);
-  assert.equal(checkResponse(fakeResponse('臺北市', '信義區', [[t(D, '09'), t(D, '12'), 10]], [])), null);
+  assert.equal(checkResponse(fakeResponse('臺北市', '信義區', [[t(D, '09'), t(D, '12'), 10]], [[t(D, '09'), 18]])), null);
 });
 
 test('W-10 用 fixture 跑整份資料：190 個景點、全部對得到、三天都有三種顏色', () => {

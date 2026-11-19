@@ -12,29 +12,14 @@ import {
   loadFixtureResponses,
   buildForecast,
   taipeiDays,
-  checkResponse,
-  COUNTY_DATASETS,
+  checkForecastHasData,
 } from '../lib/forecast.js';
+import { checkApiKey, fetchCwa } from '../lib/cwa.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const useFixture = process.argv.includes('--fixture');
-
-async function fetchCwa(apiKey) {
-  const responses = [];
-  for (const [county, id] of Object.entries(COUNTY_DATASETS)) {
-    const url = new URL(`https://opendata.cwa.gov.tw/api/v1/rest/datastore/${id}`);
-    url.searchParams.set('format', 'JSON');
-    url.searchParams.set('ElementName', '3小時降雨機率,體感溫度');
-    // 授權碼放在 header，不放網址，避免出現在錯誤訊息裡
-    const res = await fetch(url, { headers: { Authorization: apiKey } });
-    if (!res.ok) throw new Error(`${county}（${id}）抓取失敗：HTTP ${res.status}`);
-    const body = await res.json();
-    const problem = checkResponse(body);
-    if (problem) throw new Error(`${county}（${id}）${problem}，沒有寫出 forecast.json`);
-    responses.push(body);
-  }
-  return responses;
-}
+const args = process.argv.slice(2);
+const unknown = args.filter((a) => a !== '--fixture');
+const useFixture = args.includes('--fixture');
 
 // 假預報的第一天當「今天」，這樣不管哪天跑，三天都有資料
 function fixtureDays(responses) {
@@ -47,7 +32,22 @@ function fixtureDays(responses) {
   return taipeiDays(min);
 }
 
+// 兩個輸出檔先寫成暫存檔，都寫好再換上去；寫失敗就清掉暫存檔，舊檔不動
+function writeOutputs(outDir, files) {
+  const tmps = files.map(([name]) => path.join(outDir, `.${name}.tmp`));
+  try {
+    files.forEach(([, text], i) => fs.writeFileSync(tmps[i], text));
+    // forecast.js 先換：網頁優先讀它，它換不上去時 forecast.json 也還沒動
+    files.forEach(([name], i) => fs.renameSync(tmps[i], path.join(outDir, name)));
+  } finally {
+    tmps.forEach((f) => fs.rmSync(f, { force: true }));
+  }
+}
+
 async function main() {
+  if (unknown.length) {
+    throw new Error(`不認得的參數：${unknown.join(' ')}。要用假資料請加 --fixture；抓氣象署不用加參數。`);
+  }
   const spots = readSpots(path.join(root, 'data', 'spots_2025_top10.csv'));
   let responses;
   let days;
@@ -55,21 +55,21 @@ async function main() {
     responses = loadFixtureResponses(path.join(root, 'fixtures'));
     days = fixtureDays(responses);
   } else {
-    const apiKey = process.env.CWA_API_KEY;
-    if (!apiKey) {
-      console.error('沒有設定環境變數 CWA_API_KEY。要用假資料請加 --fixture。');
-      process.exit(1);
-    }
+    const apiKey = checkApiKey(process.env.CWA_API_KEY);
     responses = await fetchCwa(apiKey);
     days = taipeiDays();
   }
 
   const data = buildForecast(spots, responses, days, { source: useFixture ? 'fixture' : 'cwa' });
+  const problem = checkForecastHasData(data);
+  if (problem) throw new Error(problem);
   const outDir = path.join(root, 'public');
   fs.mkdirSync(outDir, { recursive: true });
   const json = JSON.stringify(data);
-  fs.writeFileSync(path.join(outDir, 'forecast.json'), json + '\n');
-  fs.writeFileSync(path.join(outDir, 'forecast.js'), `window.FORECAST_DATA = ${json};\n`);
+  writeOutputs(outDir, [
+    ['forecast.js', `window.FORECAST_DATA = ${json};\n`],
+    ['forecast.json', json + '\n'],
+  ]);
 
   console.log(`來源：${data.source === 'fixture' ? 'fixtures 假預報' : '氣象署'}`);
   console.log(`日期：${days.join('、')}`);
