@@ -18,5 +18,5 @@
 ## 這個工具的限制
 
 - 純 JavaScript，不用需要編譯的框架。地圖用 Leaflet（CDN 載入）。測試用 node 內建的 test，不加 npm 套件。
-- 氣象署授權碼只放在 Ray 電腦的環境變數 `CWA_API_KEY`，不寫進程式、不 commit、不放進網頁。網頁只讀 `public/forecast.json`，由 `scripts/build-data.js` 在本機產出。
+- 氣象署授權碼只放在兩個地方：Ray 電腦的環境變數 CWA_API_KEY，以及 GitHub repo 的 Secret CWA_API_KEY。不寫進程式、不 commit、不放進網頁。網頁只讀 public/forecast.json，平常由 GitHub Actions 定時產出，Ray 也可以在本機手動跑。
 - 開發和測試只用 `fixtures/` 的假預報，不打氣象署 API。
