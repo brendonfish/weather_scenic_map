@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>旅遊天氣景點地圖</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha384-c6Rcwz4e4CITMbu/NBmnNS8yN2sC3cUElMEMfP3vqqKFp7GOYaaBBCqmaWBjmkjb" crossorigin="anonymous">
+<style>
+  html, body { margin: 0; height: 100%; font-family: -apple-system, "PingFang TC", "Noto Sans TC", sans-serif; }
+  #map { position: absolute; inset: 0; }
+  .panel {
+    position: absolute; top: 10px; left: 50px; z-index: 1000;
+    background: #fff; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.25);
+    padding: 10px 12px; font-size: 14px; max-width: 320px;
+  }
+  .panel h1 { font-size: 16px; margin: 0 0 8px; }
+  .days button {
+    border: 1px solid #999; background: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 14px;
+  }
+  .days button.on { background: #333; color: #fff; border-color: #333; }
+  .row { margin-top: 8px; }
+  .legend span { display: inline-flex; align-items: center; margin-right: 8px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px; border: 1px solid #333; }
+  .sq { border-radius: 2px; }
+  .note { color: #666; font-size: 12px; }
+  .marker { width: 14px; height: 14px; border: 1.5px solid #222; border-radius: 50%; box-sizing: border-box; }
+  .marker.indoor { border-radius: 2px; }
+  .c-green { background: #2e9d4c; } .c-yellow { background: #f2c230; } .c-red { background: #d93b3b; } .c-gray { background: #aaa; }
+  .popup table { border-collapse: collapse; margin-top: 4px; }
+  .popup td { padding: 1px 6px 1px 0; }
+  .cold { color: #1f5fbf; font-weight: bold; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="panel">
+  <h1>旅遊天氣景點地圖</h1>
+  <div class="days" id="days"></div>
+  <div class="row">
+    <label><input type="checkbox" id="hideIndoor"> 隱藏「室內」和「商圈、夜市、老街」</label>
+  </div>
+  <div class="row legend">
+    <span><i class="dot c-green"></i>20% 以下</span>
+    <span><i class="dot c-yellow"></i>30–50%</span>
+    <span><i class="dot c-red"></i>60% 以上</span>
+    <span><i class="dot c-gray"></i>沒資料</span>
+  </div>
+  <div class="row legend"><span><i class="dot sq c-gray"></i>方形＝室內</span></div>
+  <div class="row note" id="info"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO" crossorigin="anonymous"></script>
+<!-- 由 scripts/build-data.js 產出；直接雙擊打開網頁時用這份（瀏覽器不讓 file:// 用 fetch） -->
+<script src="public/forecast.js"></script>
+<script>
+(async function () {
+  const HIDE_SETTINGS = ['室內', '商圈、夜市、老街（戶外街區）'];
+  const DAY_LABELS = ['今天', '明天', '後天'];
+
+  let data = window.FORECAST_DATA;
+  if (!data) {
+    try {
+      data = await fetch('public/forecast.json').then((r) => r.json());
+    } catch (e) {
+      document.getElementById('info').textContent =
+        '讀不到 public/forecast.json。請先跑 node scripts/build-data.js --fixture';
+      return;
+    }
+  }
+
+  const map = L.map('map').setView([23.7, 121], 8);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors',
+  }).addTo(map);
+
+  let dayIndex = 0;
+  const layer = L.layerGroup().addTo(map);
+
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fmtPop = (v) => (v === null || v === undefined ? '—' : v + '%');
+
+  function popupHtml(s, day) {
+    const isIndoor = s.setting === '室內';
+    let html = `<div class="popup"><b>${esc(s.name)}</b>${isIndoor ? '（室內）' : ''}<br>` +
+      `${esc(s.county)}${esc(s.town)}<br>` +
+      `2025 遊客人次：${Number(s.visitors).toLocaleString('zh-TW')}<br>` +
+      `類型：${esc(s.setting)}<br>`;
+    if (!day) {
+      html += '這個景點對不到鄉鎮預報，沒有天氣資料。</div>';
+      return html;
+    }
+    html += `<b>${esc(DAY_LABELS[dayIndex])} ${esc(day.date)} 09:00–18:00</b>`;
+    if (!day.slots.length) {
+      html += '<br>這天這個時段沒有預報資料。';
+    } else {
+      html += '<table>' + day.slots.map((x) =>
+        `<tr><td>${esc(x.start)}–${esc(x.end)}</td><td>降雨 ${fmtPop(x.pop)}</td></tr>`).join('') + '</table>';
+    }
+    html += `最高降雨機率：${fmtPop(day.maxPop)}<br>`;
+    html += `最低體感溫度：${day.minAT === null ? '—' : esc(day.minAT) + '°C'}` +
+      (day.cold ? ' <span class="cold">偏冷</span>' : '');
+    return html + '</div>';
+  }
+
+  function render() {
+    layer.clearLayers();
+    const hide = document.getElementById('hideIndoor').checked;
+    let shown = 0;
+    for (const s of data.spots) {
+      if (hide && HIDE_SETTINGS.includes(s.setting)) continue;
+      const day = s.forecast ? s.forecast[dayIndex] : null;
+      const color = day ? day.color : 'gray';
+      const indoor = s.setting === '室內';
+      const icon = L.divIcon({
+        className: '',
+        html: `<div class="marker c-${color}${indoor ? ' indoor' : ''}" data-color="${color}"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+      });
+      L.marker([s.lat, s.lng], { icon, title: s.name })
+        .bindPopup(() => popupHtml(s, day))
+        .addTo(layer);
+      shown++;
+    }
+    let src = data.source === 'fixture' ? '（假資料，不是真的天氣）' : '';
+    // 資料的「今天」不是打開網頁的今天：提醒重跑，避免把舊預報當成今天
+    const todayTaipei = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
+    if (data.source !== 'fixture' && data.days[0] !== todayTaipei) {
+      src += `（注意：這份預報是 ${data.days[0]} 產生的，「今天」指的是那一天。請重跑 node scripts/build-data.js）`;
+    }
+    document.getElementById('info').textContent =
+      `顯示 ${shown} / ${data.spots.length} 個景點${src}。資料產生時間：${new Date(data.generatedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`;
+  }
+
+  const daysEl = document.getElementById('days');
+  data.days.forEach((d, i) => {
+    const b = document.createElement('button');
+    b.textContent = `${DAY_LABELS[i]} ${d.slice(5).replace('-', '/')}`;
+    b.onclick = () => {
+      dayIndex = i;
+      [...daysEl.children].forEach((x, j) => x.classList.toggle('on', j === i));
+      map.closePopup();
+      render();
+    };
+    if (i === 0) b.classList.add('on');
+    daysEl.appendChild(b);
+  });
+  document.getElementById('hideIndoor').onchange = render;
+  render();
+})();
+</script>
+</body>
+</html>
