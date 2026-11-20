@@ -12,7 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { checkResponse, taipeiDays } from '../lib/forecast.js';
+import { checkResponse, taipeiDays, COUNTY_DATASETS } from '../lib/forecast.js';
 import { checkApiKey, fetchCwa } from '../lib/cwa.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,12 +60,25 @@ function cwaBody(variant = 'ok') {
 
 const fakeFetch = (body) => async () => ({ ok: true, status: 200, json: async () => body });
 
+// 22 個縣市各一個鄉鎮的回傳（每份格式跟 cwaBody 一樣）。
+// 前 stale 個縣市的日期改成 2099-12-01，等於「這個縣市沒有今天到後天的資料」。
+function allCountiesBody(variant = 'ok', stale = 0) {
+  const base = cwaBody(variant);
+  const loc = base.records.Locations[0].Location[0];
+  base.records.Locations = Object.keys(COUNTY_DATASETS).map((county, i) => {
+    let text = JSON.stringify(loc);
+    if (i < stale) text = text.split(D).join('2099-12-01');
+    return { LocationsName: county, Location: [JSON.parse(text)] };
+  });
+  return base;
+}
+
 // 跑 scripts/build-data.js 正式模式，fetch 換成假的（回傳 variant 那種格式）。
 // 在暫存複本 dir 裡跑，不碰 repo 真的 public/；Date.now 固定成 now。
 // 假 fetch 每被叫一次就在 stderr 印「[假fetch]」。
-function runBuild(apiKey, variant, dir, { args = [], now = NOW } = {}) {
+function runBuild(apiKey, variant, dir, { args = [], now = NOW, stale = 0 } = {}) {
   const mock =
-    `const body = ${JSON.stringify(cwaBody(variant))};` +
+    `const body = ${JSON.stringify(allCountiesBody(variant, stale))};` +
     `globalThis.fetch = async () => { process.stderr.write('[假fetch]\\n'); return { ok: true, status: 200, json: async () => body }; };` +
     `Date.now = () => ${now};`;
   return spawnSync(
@@ -168,14 +181,14 @@ test('W-19 build-data.js：授權碼中間有換行時 exit 非 0、報格式不
 });
 
 // 第一輪檢查找到的兩個問題（2026-11-20）
-import { buildForecast, checkForecastHasData } from '../lib/forecast.js';
+import { buildForecast, checkCountyCoverage } from '../lib/forecast.js';
 
 test('W-20 回傳的日期全部對不到今天到後天（舊資料或電腦時鐘錯）：不寫檔、exit 非 0', () => {
-  const spot = { name: 'A', county: '臺北市', town: '信義區', lat: 25, lng: 121, visitors: 1, setting: '戶外' };
-  const stale = buildForecast([spot], [cwaBody('ok')], ['2099-12-01', '2099-12-02', '2099-12-03'], { source: 'cwa' });
-  assert.match(checkForecastHasData(stale), /對不到/);
-  const fresh = buildForecast([spot], [cwaBody('ok')], taipeiDays(NOW), { source: 'cwa' });
-  assert.equal(checkForecastHasData(fresh), null);
+  const stale = checkCountyCoverage([allCountiesBody('ok')], ['2099-12-02', '2099-12-03', '2099-12-04']);
+  assert.equal(stale.missing.length, 22);
+  assert.match(stale.error, /對不到/);
+  const fresh = checkCountyCoverage([allCountiesBody('ok')], taipeiDays(NOW));
+  assert.deepEqual(fresh, { missing: [], error: null });
   // 整支 build-data.js：假 fetch 回今天的資料，但電腦時間是 2099-12-01
   withOldOutput((read, dir) => {
     const r = runBuild('FAKE-SECRET', 'ok', dir, { now: Date.parse('2099-12-01T10:00:00+08:00') });
@@ -254,6 +267,44 @@ test('W-25 不認得的參數（例如打錯成 --fixtures）：直接報錯，�
     assert.notEqual(r.status, 0);
     assert.match(r.stderr, /不認得的參數：--fixtures/);
     assert.ok(!r.stderr.includes('[假fetch]'), '不應該抓氣象署');
+    assert.deepEqual(read(), ['OLD', 'OLD']);
+  });
+});
+
+// 2026-11-20 早會 Ray 的決定：22 個縣市裡 12 個以上沒有今天到後天的資料就不寫檔；
+// 11 個以下照常寫檔，終端機列出沒資料的縣市。
+test('W-26 checkCountyCoverage：11 個縣市沒資料照常、12 個以上報錯，並列出是哪些縣市', () => {
+  const days = taipeiDays(NOW);
+  const counties = Object.keys(COUNTY_DATASETS);
+  const r11 = checkCountyCoverage([allCountiesBody('ok', 11)], days);
+  assert.equal(r11.error, null);
+  assert.deepEqual(r11.missing, counties.slice(0, 11));
+  const r12 = checkCountyCoverage([allCountiesBody('ok', 12)], days);
+  assert.deepEqual(r12.missing, counties.slice(0, 12));
+  assert.match(r12.error, /12 個縣市/);
+  assert.match(r12.error, /沒有寫出 forecast\.json/);
+  // 縣市整份沒抓到（回傳裡沒有這個縣市）也算沒資料；台／臺當成同一個字
+  const body = allCountiesBody('ok');
+  body.records.Locations = body.records.Locations.filter((g) => g.LocationsName !== '宜蘭縣');
+  body.records.Locations.find((g) => g.LocationsName === '臺北市').LocationsName = '台北市';
+  assert.deepEqual(checkCountyCoverage([body], days), { missing: ['宜蘭縣'], error: null });
+});
+
+test('W-27 build-data.js：11 個縣市沒資料照常寫檔並列出縣市；12 個沒資料 exit 非 0、舊檔不動', () => {
+  const counties = Object.keys(COUNTY_DATASETS);
+  withOldOutput((read, dir) => {
+    const r = runBuild('FAKE-SECRET', 'ok', dir, { stale: 11 });
+    assert.equal(r.status, 0, r.stderr);
+    assert.notEqual(read()[0], 'OLD');
+    const line = r.stdout.split('\n').find((l) => l.includes('11 個縣市沒有今天到後天的資料'));
+    assert.ok(line, r.stdout);
+    for (const c of counties.slice(0, 11)) assert.ok(line.includes(c), `沒列出 ${c}`);
+    assert.ok(!line.includes(counties[11]), '有資料的縣市不該列出來');
+  });
+  withOldOutput((read, dir) => {
+    const r = runBuild('FAKE-SECRET', 'ok', dir, { stale: 12 });
+    assert.notEqual(r.status, 0, r.stdout);
+    assert.match(r.stderr, /12 個縣市/);
     assert.deepEqual(read(), ['OLD', 'OLD']);
   });
 });

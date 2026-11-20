@@ -12,7 +12,7 @@ import {
   loadFixtureResponses,
   buildForecast,
   taipeiDays,
-  checkForecastHasData,
+  checkCountyCoverage,
 } from '../lib/forecast.js';
 import { checkApiKey, fetchCwa } from '../lib/cwa.js';
 
@@ -60,9 +60,9 @@ async function main() {
     days = taipeiDays();
   }
 
+  const coverage = checkCountyCoverage(responses, days);
+  if (coverage.error) throw new Error(coverage.error);
   const data = buildForecast(spots, responses, days, { source: useFixture ? 'fixture' : 'cwa' });
-  const problem = checkForecastHasData(data);
-  if (problem) throw new Error(problem);
   const outDir = path.join(root, 'public');
   fs.mkdirSync(outDir, { recursive: true });
   const json = JSON.stringify(data);
@@ -74,6 +74,9 @@ async function main() {
   console.log(`來源：${data.source === 'fixture' ? 'fixtures 假預報' : '氣象署'}`);
   console.log(`日期：${days.join('、')}`);
   console.log(`景點：${data.spots.length} 個，寫到 public/forecast.json`);
+  if (coverage.missing.length) {
+    console.log(`${coverage.missing.length} 個縣市沒有今天到後天的資料（地圖上會是灰色）：${coverage.missing.join('、')}`);
+  }
   if (data.unmatched.length) {
     console.log(`對不到鄉鎮的景點 ${data.unmatched.length} 個（天氣留空）：`);
     for (const u of data.unmatched) console.log(`  - ${u.county}${u.town} ${u.name}`);
