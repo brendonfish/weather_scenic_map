@@ -1,0 +1,50 @@
+# 每天定時抓氣象署預報，連同網頁一起部署到 GitHub Pages。
+# 預報檔不 commit 進 repo；build 失敗就不部署，網站維持上一次的資料。
+# 授權碼只放在 repo 的 Secret「CWA_API_KEY」，這個檔案和 log 都不會出現授權碼。
+name: 更新天氣預報
+
+on:
+  schedule:
+    # GitHub 的 cron 用 UTC，台北時間要減 8 小時
+    - cron: '30 21 * * *' # 台北 05:30
+    - cron: '30 3 * * *'  # 台北 11:30
+    - cron: '30 9 * * *'  # 台北 17:30
+  workflow_dispatch: # 在 Actions 頁面按「Run workflow」手動跑
+  push:
+    branches: [main] # 改了網頁程式，push 之後也重新部署一次
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: 抓預報、產出網站
+        env:
+          CWA_API_KEY: ${{ secrets.CWA_API_KEY }}
+        run: bash scripts/build-site.sh
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

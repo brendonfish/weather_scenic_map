@@ -17,6 +17,34 @@ CWA_API_KEY=你的授權碼 node scripts/build-data.js
 
 測試：`node --test`
 
+## 公開網址和自動更新
+
+- 網址：https://brendonfish.github.io/weather_scenic_map/ （repo：`brendonfish/weather_scenic_map`）
+- 自動更新：`.github/workflows/update-forecast.yml` 每天台北時間 05:30、11:30、17:30 跑一次，push 到 `main` 時也會跑。
+  它跑 `scripts/build-site.sh`：抓氣象署預報，成功才把網頁和預報放進 `_site/`，再部署到 GitHub Pages。
+  預報檔**不會** commit 進 repo，所以本機跑 `build-data.js --fixture` 不會影響公開網站。
+- build 照下面的防呆規則不寫檔時，workflow 會標成失敗（紅色叉叉），不部署，網站繼續顯示上一次的資料。
+- 網頁左上角會顯示「預報更新於 MM/DD HH:MM」（台北時間），看得出資料多久沒更新。
+
+### 設定授權碼（只要做一次）
+
+1. 到 GitHub 的 repo 頁面 → Settings → Secrets and variables → Actions。
+2. 按「New repository secret」，Name 填 `CWA_API_KEY`，Secret 貼氣象署的授權碼，按「Add secret」。
+3. 授權碼只放在這裡和自己電腦的環境變數，不要寫進任何檔案。
+
+### 打開 GitHub Pages（只要做一次）
+
+Settings → Pages → Build and deployment：Source 選「**GitHub Actions**」（不是 Deploy from a branch）。
+
+### 手動觸發
+
+repo 頁面 → Actions → 左邊選「更新天氣預報」→ 右邊「Run workflow」→ 再按一次綠色的「Run workflow」。
+跑完（build 和 deploy 兩個都是綠色勾勾），打開網址看「預報更新於」有沒有變成剛剛的時間。
+
+### 本機試跑
+
+`bash scripts/build-site.sh --fixture` 會用假預報產出 `_site/`（已經在 `.gitignore` 裡），可以用瀏覽器打開 `_site/index.html` 看。
+
 ## 會收哪幾天
 
 - 從今天開始，只收 09:00–18:00 還有預報時段的日子，收滿 3 天。晚上跑（今天的時段都過了）就從明天開始。
