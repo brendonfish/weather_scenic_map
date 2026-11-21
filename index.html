@@ -52,10 +52,11 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO" crossorigin="anonymous"></script>
 <!-- 由 scripts/build-data.js 產出；直接雙擊打開網頁時用這份（瀏覽器不讓 file:// 用 fetch） -->
 <script src="public/forecast.js"></script>
+<script src="lib/day-labels.js"></script>
 <script>
 (async function () {
   const HIDE_SETTINGS = ['室內', '商圈、夜市、老街（戶外街區）'];
-  const DAY_LABELS = ['今天', '明天', '後天'];
+  // 「今天」用打開網頁時的台灣日期算；假資料沒有真的日期，用它的第一天當今天
 
   let data = window.FORECAST_DATA;
   if (!data) {
@@ -74,7 +75,9 @@
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map);
 
-  let dayIndex = 0;
+  const nowTaipei = DayLabels.taipeiDate(Date.now());
+  const today = data.source === 'fixture' ? data.days[0] : nowTaipei;
+  let dayIndex = DayLabels.defaultIndex(data.days, today);
   const layer = L.layerGroup().addTo(map);
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -90,7 +93,13 @@
       html += '這個景點對不到鄉鎮預報，沒有天氣資料。</div>';
       return html;
     }
-    html += `<b>${esc(DAY_LABELS[dayIndex])} ${esc(day.date)} 09:00–18:00</b>`;
+    const name = DayLabels.dayName(day.date, today);
+    html += day.partial
+      ? `<b>${esc(name)}（剩下的時段） ${esc(day.date)}</b>`
+      : `<b>${esc(name)} ${esc(day.date)} 09:00–18:00</b>`;
+    if (day.coverUntil) {
+      html += `<br>預報只到 ${esc(day.coverUntil)}，之後的時段還沒有預報，這天先不標顏色。`;
+    }
     if (!day.slots.length) {
       html += '<br>這天這個時段沒有預報資料。';
     } else {
@@ -124,10 +133,9 @@
       shown++;
     }
     let src = data.source === 'fixture' ? '（假資料，不是真的天氣）' : '';
-    // 資料的「今天」不是打開網頁的今天：提醒重跑，避免把舊預報當成今天
-    const todayTaipei = new Date(Date.now() + 8 * 3600 * 1000).toISOString().slice(0, 10);
-    if (data.source !== 'fixture' && data.days[0] !== todayTaipei) {
-      src += `（注意：這份預報是 ${data.days[0]} 產生的，「今天」指的是那一天。請重跑 node scripts/build-data.js）`;
+    // 資料最後一天比今天還早：太舊，提醒重跑
+    if (data.source !== 'fixture' && DayLabels.isStale(data.days, nowTaipei)) {
+      src += `（注意：這份預報只到 ${data.days[data.days.length - 1]}，已經過期。請重跑 node scripts/build-data.js）`;
     }
     document.getElementById('info').textContent =
       `顯示 ${shown} / ${data.spots.length} 個景點${src}。資料產生時間：${new Date(data.generatedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`;
@@ -136,14 +144,14 @@
   const daysEl = document.getElementById('days');
   data.days.forEach((d, i) => {
     const b = document.createElement('button');
-    b.textContent = `${DAY_LABELS[i]} ${d.slice(5).replace('-', '/')}`;
+    b.textContent = DayLabels.buttonText(d, today);
     b.onclick = () => {
       dayIndex = i;
       [...daysEl.children].forEach((x, j) => x.classList.toggle('on', j === i));
       map.closePopup();
       render();
     };
-    if (i === 0) b.classList.add('on');
+    if (i === dayIndex) b.classList.add('on');
     daysEl.appendChild(b);
   });
   document.getElementById('hideIndoor').onchange = render;

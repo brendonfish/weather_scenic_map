@@ -16,8 +16,9 @@ import { checkResponse, taipeiDays, COUNTY_DATASETS } from '../lib/forecast.js';
 import { checkApiKey, fetchCwa } from '../lib/cwa.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-// 測試和子程序用同一個「現在」，跨過午夜也不會對不上
-const NOW = Date.now();
+// 測試和子程序用同一個「現在」（假時鐘：台灣時間今天 08:00），跨過午夜、下午跑測試都不會對不上。
+// build 只收還沒過的時段，假回傳只有今天 09–12 一段，所以「現在」要在 09:00 之前。
+const NOW = Date.parse(`${taipeiDays()[0]}T08:00:00+08:00`);
 // 用台灣時間的今天，正式模式才不會被「日期對不到」擋下
 const D = taipeiDays(NOW)[0];
 const t = (hh) => `${D}T${hh}:00:00+08:00`;
@@ -42,7 +43,8 @@ function cwaBody(variant = 'ok') {
                 {
                   ElementName: '3小時降雨機率',
                   Time: [
-                    { [startKey]: t('09'), [endKey]: t('12'), ElementValue: [{ [valueKey]: value }] },
+                    // 一段涵蓋整個 09:00–18:00：build 只收預報涵蓋到 18:00 的日子
+                    { [startKey]: t('09'), [endKey]: t('18'), ElementValue: [{ [valueKey]: value }] },
                   ],
                 },
                 {
@@ -296,7 +298,7 @@ test('W-27 build-data.js：11 個縣市沒資料照常寫檔並列出縣市；12
     const r = runBuild('FAKE-SECRET', 'ok', dir, { stale: 11 });
     assert.equal(r.status, 0, r.stderr);
     assert.notEqual(read()[0], 'OLD');
-    const line = r.stdout.split('\n').find((l) => l.includes('11 個縣市沒有今天到後天的資料'));
+    const line = r.stdout.split('\n').find((l) => l.includes(`11 個縣市沒有 ${D} 的資料`));
     assert.ok(line, r.stdout);
     for (const c of counties.slice(0, 11)) assert.ok(line.includes(c), `沒列出 ${c}`);
     assert.ok(!line.includes(counties[11]), '有資料的縣市不該列出來');
