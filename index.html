@@ -47,6 +47,7 @@
   </div>
   <div class="row legend"><span><i class="dot sq c-gray"></i>方形＝室內</span></div>
   <div class="row note" id="info"></div>
+  <div class="row note">天氣資料來源：交通部中央氣象署</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO" crossorigin="anonymous"></script>
@@ -138,7 +139,7 @@
       src += `（注意：這份預報只到 ${data.days[data.days.length - 1]}，已經過期。請重跑 node scripts/build-data.js）`;
     }
     document.getElementById('info').textContent =
-      `顯示 ${shown} / ${data.spots.length} 個景點${src}。資料產生時間：${new Date(data.generatedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`;
+      `顯示 ${shown} / ${data.spots.length} 個景點${src}。${DayLabels.updatedText(data.generatedAt)}`;
   }
 
   const daysEl = document.getElementById('days');
