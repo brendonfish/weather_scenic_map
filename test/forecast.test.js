@@ -193,7 +193,8 @@ test('W-9 對不到鄉鎮的景點還是要輸出，天氣留空，並列在 unm
   const resp = fakeResponse(
     '臺北市',
     '信義區',
-    [[t(D, '09'), t(D, '12'), 20]],
+    // 預報要涵蓋到 18:00，不然會被當成「預報只到 12:00」（N-17）
+    [[t(D, '09'), t(D, '12'), 20], [t(D, '12'), t(D, '15'), 10], [t(D, '15'), t(D, '18'), 10]],
     [[t(D, '09'), 18]],
   );
   const out = buildForecast(spots, [resp], [D, '2026-11-20', '2026-11-21'], { source: 'test' });
@@ -217,7 +218,7 @@ test('W-11 體感溫度 12 度以下標偏冷', () => {
   const mk = (v) =>
     buildForecast(
       [{ name: 'A', county: '臺北市', town: '信義區', lat: 25, lng: 121, visitors: 1, setting: '戶外' }],
-      [fakeResponse('臺北市', '信義區', [[t(D, '09'), t(D, '12'), 10]], [[t(D, '09'), v]])],
+      [fakeResponse('臺北市', '信義區', [[t(D, '09'), t(D, '12'), 10], [t(D, '12'), t(D, '15'), 10], [t(D, '15'), t(D, '18'), 10]], [[t(D, '09'), v]])],
       [D],
       { source: 'test' },
     ).spots[0].forecast[0].cold;

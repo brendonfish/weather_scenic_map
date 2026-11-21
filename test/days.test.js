@@ -236,3 +236,41 @@ test('N-16 build-data.js：縣市沒資料的訊息寫實際的日期，不寫�
   assert.match(r.stdout, /3 個縣市沒有 2026-11-21、2026-11-22、2026-11-23 的資料/);
   assert.ok(!r.stdout.includes('今天到後天'), r.stdout);
 });
+
+// 2026-11-21 16:46 Ray 決定 (a)：每個景點各自檢查自己的預報有沒有涵蓋到 18:00
+test('N-17 抓到一半氣象署更新（21 縣市舊版、金門新版）：第 3 天舊版的 180 個景點灰色、標「預報只到 12:00」，金門照常', () => {
+  // 舊版：11/20 12:00–11/23 12:00；新版：11/20 18:00–11/23 18:00；11/20 17:31 跑
+  const oldIssue = fixtures.map((r) => shift(r, at('2026-11-20T12:00:00') - at('2026-11-19T06:00:00')));
+  const newIssue = fixtures.map((r) => shift(r, at('2026-11-20T18:00:00') - at('2026-11-19T06:00:00')));
+  const kinmen = Object.keys(COUNTY_DATASETS).indexOf('金門縣');
+  const mixed = oldIssue.map((r, i) => (i === kinmen ? newIssue[i] : r));
+  const now = at('2026-11-20T17:31:00');
+  const days = pickDays(mixed, now);
+  assert.deepEqual(days, ['2026-11-21', '2026-11-22', '2026-11-23']); // pickDays 規則不改
+  const out = buildForecast(spots, mixed, days, { source: 'cwa', nowMs: now });
+  const day3 = out.spots.map((s) => ({ county: s.county, f: s.forecast[2] }));
+  const others = day3.filter((x) => x.county !== '金門縣');
+  const km = day3.filter((x) => x.county === '金門縣');
+  assert.equal(others.length, 180);
+  assert.equal(km.length, 10);
+  for (const x of others) {
+    assert.equal(x.f.color, 'gray');
+    assert.equal(x.f.maxPop, null);
+    assert.equal(x.f.minAT, null);
+    assert.equal(x.f.cold, false);
+    assert.equal(x.f.coverUntil, '12:00');
+  }
+  for (const x of km) {
+    assert.notEqual(x.f.color, 'gray');
+    assert.equal(x.f.coverUntil, null);
+    assert.equal(x.f.slots.length, 3);
+  }
+  // 前兩天大家都涵蓋到 18:00，照常
+  for (const s of out.spots) for (const i of [0, 1]) assert.equal(s.forecast[i].coverUntil, null);
+});
+
+test('N-18 index.html 景點資訊會顯示「預報只到 HH:MM」', () => {
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  assert.match(html, /預報只到/);
+  assert.match(html, /coverUntil/);
+});

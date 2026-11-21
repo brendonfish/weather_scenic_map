@@ -97,6 +97,9 @@
     html += day.partial
       ? `<b>${esc(name)}（剩下的時段） ${esc(day.date)}</b>`
       : `<b>${esc(name)} ${esc(day.date)} 09:00–18:00</b>`;
+    if (day.coverUntil) {
+      html += `<br>預報只到 ${esc(day.coverUntil)}，之後的時段還沒有預報，這天先不標顏色。`;
+    }
     if (!day.slots.length) {
       html += '<br>這天這個時段沒有預報資料。';
     } else {
