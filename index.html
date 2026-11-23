@@ -85,6 +85,11 @@
   .detail .slots span { display: block; color: var(--ink-2); font-size: 12px; }
   .detail .is-cold { color: var(--cold); font-weight: 600; }
   .detail .meta { margin-top: 6px; }
+  .detail .route {
+    display: flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 10px;
+    border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font-weight: 600; text-decoration: none;
+  }
+  .detail .route:hover { background: var(--bg-2); }
   .sheet {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 1001; box-sizing: border-box;
     background: var(--bg); border-top: 1px solid var(--hair); border-radius: 14px 14px 0 0;
@@ -233,7 +238,8 @@
     const minutes = origin ? minutesTo(s.county, s.name) : undefined;
     if (minutes !== undefined) html += `<div class="when">${esc(DriveTime.durationText(origin.county + origin.town, minutes))}</div>`;
     return html + `<div class="meta">${esc(s.county)}${esc(s.town)} · ${esc(s.setting)} · ` +
-      `2025 遊客 ${Number(s.visitors).toLocaleString('zh-TW')} 人次</div></div>`;
+      `2025 遊客 ${Number(s.visitors).toLocaleString('zh-TW')} 人次</div>` +
+      `<a class="route" href="${esc(SpotView.routeUrl(s))}" target="_blank" rel="noopener">用 Google 地圖規劃路線</a></div>`;
   }
 
   function closeSheet() {

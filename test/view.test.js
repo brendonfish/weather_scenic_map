@@ -157,6 +157,24 @@ test('V-12 點景點：桌機開地圖資訊框，手機開底部面板（不會
   assert.match(phone.els.sheetBody.innerHTML, /後天/);
 });
 
+test('V-14 routeUrl：Google 地圖的開車路線，目的地用景點座標，不帶出發地（Google 會用使用者現在的位置）', () => {
+  const V = loadView();
+  assert.equal(V.routeUrl({ lat: 25.0421, lng: 121.5075 }), 'https://www.google.com/maps/dir/?api=1&destination=25.0421%2C121.5075&travelmode=driving');
+});
+
+test('V-15 景點資訊有「用 Google 地圖規劃路線」的按鈕，桌機和手機都有，開在新分頁', async () => {
+  const wide = await runPage(fixtureData());
+  wide.rec.markers[0].handlers.click();
+  const link = /<a class="route" href="https:\/\/www\.google\.com\/maps\/dir\/\?api=1&amp;destination=[\d.]+%2C[\d.]+&amp;travelmode=driving" target="_blank" rel="noopener">用 Google 地圖規劃路線<\/a>/;
+  assert.match(wide.rec.popupHtml, link);
+
+  const phone = await runPage(fixtureData(), { narrow: true });
+  phone.rec.markers[0].handlers.click();
+  assert.match(phone.els.sheetBody.innerHTML, link);
+  // 按鈕在手機上要好點
+  assert.match(html, /\.detail \.route \{[^}]*min-height: 44px/);
+});
+
 test('V-13 預報過期：用一般人看得懂的話提示，不叫人跑指令', async () => {
   const { els } = await runPage({ source: 'cwa', days: ['2020-01-01'], spots: [], generatedAt: '2020-01-01T00:00:00Z' });
   assert.equal(els.notice.hidden, false);
