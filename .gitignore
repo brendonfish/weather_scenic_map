@@ -26,3 +26,6 @@ _site/
 # 引擎執行檔第一次跑才會下載，不進 git。
 **/skills/impeccable/scripts/bin/
 # impeccable-ignore-end
+
+# 算車程用的路網資料和 OSRM 暫存檔（很大，算完可以刪）
+.osrm/

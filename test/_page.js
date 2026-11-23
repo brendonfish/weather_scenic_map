@@ -10,15 +10,19 @@ import { fileURLToPath } from 'node:url';
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // 回傳 { els, rec }：els 是畫面上各個 id 的假元素，rec 記下畫了哪些標記、呼叫過哪些地圖動作
-export async function runPage(data, { narrow = false } = {}) {
+// drive：{ index, times } 假的車程檔（沒給就當作 drive/ 還沒產出）；storage：瀏覽器裡已經記住的東西
+export const tick = () => new Promise((r) => setTimeout(r, 0));
+
+export async function runPage(data, { narrow = false, drive = null, storage = {} } = {}) {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const els = {};
   const el = () => ({
-    textContent: '', innerHTML: '', checked: false, hidden: false, open: false, children: [], onclick: null, onchange: null,
+    textContent: '', innerHTML: '', value: '', checked: false, hidden: false, disabled: false, open: false, children: [], onclick: null, onchange: null,
     offsetHeight: 0, offsetWidth: 0, parentNode: { offsetHeight: 0, offsetWidth: 0 },
     attrs: {},
     setAttribute(k, v) { this.attrs[k] = v; },
     appendChild(c) { this.children.push(c); },
+    replaceChildren(...c) { this.children = c; },
   });
   const rec = { markers: [], calls: [], popupHtml: null, mapOn: {} };
   const map = {
@@ -45,19 +49,30 @@ export async function runPage(data, { narrow = false } = {}) {
     },
   };
   const ctx = {
-    window: { FORECAST_DATA: data, matchMedia: () => ({ matches: narrow, addEventListener() {} }) },
+    window: {
+      FORECAST_DATA: data, matchMedia: () => ({ matches: narrow, addEventListener() {} }),
+      DRIVE_INDEX: drive ? drive.index : undefined,
+      localStorage: { getItem: (k) => storage[k] ?? null, setItem(k, v) { storage[k] = String(v); } },
+    },
     document: {
       getElementById: (id) => (els[id] ??= el()),
       createElement: () => el(),
       documentElement: { style: { setProperty() {} } },
+      // 網頁用 <script> 載入一個縣市的車程檔：這裡直接把假資料放進 window，再通知載入完成
+      head: { appendChild(s) {
+        const county = drive.index.counties.find((c) => s.src === 'drive/' + c.file);
+        if (drive.times[county.name]) (ctx.window.DRIVE_TIMES ??= {})[county.name] = drive.times[county.name];
+        // 假資料裡沒有這個縣市的車程：當成檔案載入失敗
+        Promise.resolve().then(() => (drive.times[county.name] ? s.onload() : s.onerror()));
+      } },
     },
     L,
     fetch: async () => { throw new Error('不該用到 fetch'); },
     Date, Number, String,
   };
-  for (const f of ['day-labels.js', 'spot-view.js']) vm.runInNewContext(fs.readFileSync(path.join(root, 'lib', f), 'utf8'), ctx);
+  for (const f of ['day-labels.js', 'spot-view.js', 'drive-time.js']) vm.runInNewContext(fs.readFileSync(path.join(root, 'lib', f), 'utf8'), ctx);
   const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
   vm.runInNewContext(scripts[scripts.length - 1][1], ctx);
-  await new Promise((r) => setTimeout(r, 0));
-  return { els, rec };
+  await tick();
+  return { els, rec, storage };
 }
