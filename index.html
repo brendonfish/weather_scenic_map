@@ -41,7 +41,16 @@
   }
   .days button:first-child { border-left: 0; }
   .days button[aria-pressed="true"] { background: var(--ink); color: #fff; }
-  .days button:focus-visible, .more summary:focus-visible, .sheet button:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
+  .days button:focus-visible, .more summary:focus-visible, .sheet button:focus-visible, .trip select:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
+  /* 出發地和車程：桌機兩列（有標籤），手機擠成一列（標籤收掉，選單第一格自己會講） */
+  .trip { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px; align-items: center; margin-top: 8px; }
+  .trip .lab { color: var(--ink-2); font-size: 13px; }
+  .trip select {
+    min-width: 0; min-height: 44px; padding: 0 6px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--ink); font: inherit;
+  }
+  .trip select:disabled { color: var(--line); border-color: var(--hair); }
+  .trip #driveLimit { grid-column: 2 / 4; }
   .summary { margin: 10px 0 8px; font-weight: 600; }
   .notice { margin: 0 0 8px; padding: 8px 10px; border: 1px solid var(--ink); border-radius: 6px; background: var(--bg-2); }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 13px; color: var(--ink-2); }
@@ -91,6 +100,11 @@
     .panel { top: 0; left: 0; right: 0; width: auto; border-width: 0 0 1px; border-radius: 0 0 12px 12px; padding: 8px 10px 4px; }
     .panel h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     .summary { margin: 8px 0 6px; }
+    .trip { grid-template-columns: 1fr 1fr 1fr; margin-top: 6px; }
+    .trip .lab { display: none; }
+    .trip #driveLimit { grid-column: auto; }
+    /* 16px 以下 iPhone 點選單時會自動放大整個畫面 */
+    .trip select { font-size: 16px; padding: 0 4px; }
   }
 </style>
 </head>
@@ -98,7 +112,15 @@
 <div class="panel">
   <h1>旅遊天氣景點地圖</h1>
   <div class="days" id="days" role="group" aria-label="選擇日期"></div>
+  <div class="trip" id="trip" hidden>
+    <span class="lab">出發地</span>
+    <select id="originCounty" aria-label="出發的縣市"></select>
+    <select id="originTown" aria-label="出發的鄉鎮市區" disabled></select>
+    <span class="lab">車程</span>
+    <select id="driveLimit" aria-label="車程上限" disabled></select>
+  </div>
   <p class="summary" id="summary" aria-live="polite"></p>
+  <p class="note" id="driveNote" hidden></p>
   <p class="notice" id="notice" role="status" hidden></p>
   <div class="legend">
     <span class="title">白天最高降雨機率（09:00–18:00）</span>
@@ -129,6 +151,9 @@
 <script src="public/forecast.js"></script>
 <script src="lib/day-labels.js"></script>
 <script src="lib/spot-view.js"></script>
+<!-- 事先算好的車程（scripts/build-drive-times.js 產出）。這裡只載入選單要用的索引，各縣市的車程選了出發地才載入 -->
+<script src="drive/index.js"></script>
+<script src="lib/drive-time.js"></script>
 <script>
 (async function () {
   const HIDE_SETTINGS = ['室內', '商圈、夜市、老街（戶外街區）'];
@@ -172,6 +197,13 @@
   let reopening = false;   // 程式自己換資訊框內容時，不要當成使用者關掉
   const layer = L.layerGroup().addTo(map);
 
+  // 出發地和車程。車程檔還沒產出或載入失敗時 driveIndex 是 null，這一列就不顯示。
+  const driveIndex = window.DRIVE_INDEX || null;
+  let origin = null;       // { county, town }；還沒選是 null
+  let minutesTo = null;    // 查「目前出發地到某個景點要幾分鐘」的函式
+  let driveLimit = null;   // 車程上限（分鐘）；null 是不限
+  let driveFailed = false; // 選了出發地但車程檔讀不到
+
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmtPop = (v) => (v === null || v === undefined ? '—' : v + '%');
   const hour = (t) => String(t).replace(/^0?(\d+):00$/, '$1'); // 09:00 → 9
@@ -198,6 +230,8 @@
       html += `<div class="${day.cold ? 'is-cold' : ''}">最低體感 ${day.minAT === null ? '—' : esc(day.minAT) + '°C'}` +
         `${day.cold ? ' · 偏冷' : ''}</div>`;
     }
+    const minutes = origin ? minutesTo(s.county, s.name) : undefined;
+    if (minutes !== undefined) html += `<div class="when">${esc(DriveTime.durationText(origin.county + origin.town, minutes))}</div>`;
     return html + `<div class="meta">${esc(s.county)}${esc(s.town)} · ${esc(s.setting)} · ` +
       `2025 遊客 ${Number(s.visitors).toLocaleString('zh-TW')} 人次</div></div>`;
   }
@@ -237,7 +271,16 @@
   function render() {
     layer.clearLayers();
     const hide = $('hideIndoor').checked;
-    const visible = data.spots.filter((s) => !(hide && HIDE_SETTINGS.includes(s.setting)));
+    const shown = data.spots.filter((s) => !(hide && HIDE_SETTINGS.includes(s.setting)));
+    // 選了出發地又選了車程上限，才用車程篩；到不了的景點（例如離島）這時也拿掉
+    const drive = origin && driveLimit !== null ? DriveTime.apply(shown, minutesTo, driveLimit) : null;
+    const visible = drive ? drive.visible : shown;
+    // 目前打開資訊的景點被篩掉了，資訊也一起收起來
+    if (selected && !visible.includes(selected)) {
+      selected = null;
+      closeSheet();
+      map.closePopup();
+    }
     for (const s of visible) {
       const day = dayOf(s);
       const color = SpotView.colorOf(s, dayIndex);
@@ -254,7 +297,11 @@
         .addTo(layer);
     }
     const summary = SpotView.summarize(visible, dayIndex);
-    $('summary').textContent = SpotView.summaryText(summary);
+    $('summary').textContent = drive ? DriveTime.summaryText(summary, driveLimit) : SpotView.summaryText(summary);
+    const driveNote = driveFailed ? '車程資料暫時讀不到，請稍後重新整理。'
+      : drive && drive.unreachable ? `有 ${drive.unreachable} 個景點開車到不了（例如離島），沒有列入。` : '';
+    $('driveNote').textContent = driveNote;
+    $('driveNote').hidden = !driveNote;
     // 這天沒有灰色的景點，圖例就不用佔一格
     $('legendGray').hidden = summary.gray === 0;
     $('info').textContent = `顯示 ${visible.length} / ${data.spots.length} 個景點。${DayLabels.updatedText(data.generatedAt)}`;
@@ -282,15 +329,72 @@
     };
     daysEl.appendChild(b);
   });
-  $('hideIndoor').onchange = () => {
-    // 被篩掉的景點，資訊也一起收起來
-    if (selected && $('hideIndoor').checked && HIDE_SETTINGS.includes(selected.setting)) {
-      selected = null;
-      closeSheet();
-      map.closePopup();
-    }
-    render();
+  $('hideIndoor').onchange = render;
+
+  // ---- 出發地和車程 ----
+  const option = (value, text) => {
+    const o = document.createElement('option');
+    o.value = value;
+    o.textContent = text;
+    return o;
   };
+  // 選擇只記在這台瀏覽器，不傳到任何地方。瀏覽器不給存（無痕模式）就算了。
+  function saveDrive() {
+    try {
+      window.localStorage.setItem('driveTime', JSON.stringify({ county: origin && origin.county, town: origin && origin.town, limit: driveLimit }));
+    } catch (e) { /* 不能存就不存 */ }
+  }
+  // 一個縣市一個車程檔，用 <script> 載入（雙擊打開網頁時瀏覽器不讓用 fetch）
+  function loadCounty(c) {
+    const have = window.DRIVE_TIMES && window.DRIVE_TIMES[c.name];
+    if (have) return Promise.resolve(have);
+    return new Promise((resolve) => {
+      const s = document.createElement('script');
+      s.src = 'drive/' + c.file;
+      s.onload = () => resolve((window.DRIVE_TIMES || {})[c.name] || null);
+      s.onerror = () => resolve(null);
+      document.head.appendChild(s);
+    });
+  }
+  function fillTowns(c) {
+    $('originTown').replaceChildren(option('', '選鄉鎮'), ...(c ? c.towns.map((t) => option(t, t)) : []));
+    $('originTown').value = '';
+    $('originTown').disabled = !c;
+  }
+  let asking = 0; // 連續換出發地時，只認最後一次
+  async function setOrigin(county, town) {
+    const mine = ++asking;
+    const c = driveIndex.counties.find((x) => x.name === county);
+    const times = c && c.towns.includes(town) ? await loadCounty(c) : null;
+    if (mine !== asking) return;
+    // 筆數跟索引對不上（瀏覽器拿到新舊不同版的檔案）也當成讀不到，不要用錯位的車程
+    const row = times && times[town] && times[town].length === driveIndex.spots.length ? times[town] : null;
+    driveFailed = Boolean(town) && !row;
+    origin = row ? { county, town } : null;
+    minutesTo = row ? DriveTime.minutesBySpot(driveIndex, row) : null;
+    $('driveLimit').disabled = !origin;
+    // 讀不到時不存：上次記住的選擇留著，下次打開再試
+    if (!driveFailed) saveDrive();
+    render();
+    showDetail();
+  }
+  $('trip').hidden = !driveIndex;
+  $('driveLimit').disabled = true;
+  if (driveIndex) {
+    $('originCounty').replaceChildren(option('', '選縣市'), ...driveIndex.counties.map((c) => option(c.name, c.name)));
+    $('driveLimit').replaceChildren(option('', '車程不限'), ...DriveTime.LIMITS.map((m) => option(String(m), DriveTime.limitText(m))));
+    fillTowns(null);
+    $('originCounty').onchange = () => {
+      fillTowns(driveIndex.counties.find((c) => c.name === $('originCounty').value));
+      setOrigin(null, null);
+    };
+    $('originTown').onchange = () => setOrigin($('originCounty').value, $('originTown').value);
+    $('driveLimit').onchange = () => {
+      driveLimit = $('driveLimit').value ? Number($('driveLimit').value) : null;
+      saveDrive();
+      render();
+    };
+  }
   $('sheetClose').onclick = () => { closeSheet(); unselect(); };
   map.on('popupclose', unselect);
   // 手機轉向或視窗拉寬拉窄：景點資訊換到對的位置，圖例說明照新的寬度開或收
@@ -302,6 +406,23 @@
   });
 
   render();
+  // 上次選的出發地和車程還在就直接套用
+  if (driveIndex) {
+    let saved = null;
+    try { saved = JSON.parse(window.localStorage.getItem('driveTime')); } catch (e) { /* 讀不到就當沒選過 */ }
+    const c = saved && driveIndex.counties.find((x) => x.name === saved.county);
+    if (c && c.towns.includes(saved.town)) {
+      // 把選單設回上次的值，再走選單自己的流程（跟使用者自己選的一樣）
+      if (DriveTime.LIMITS.includes(saved.limit)) {
+        driveLimit = saved.limit;
+        $('driveLimit').value = String(saved.limit);
+      }
+      $('originCounty').value = c.name;
+      fillTowns(c);
+      $('originTown').value = saved.town;
+      $('originTown').onchange();
+    }
+  }
   // 一開始把台灣本島和澎湖放進沒被面板擋住的範圍
   const panel = daysEl.parentNode;
   map.fitBounds([[21.85, 119.4], [25.35, 122.05]], {

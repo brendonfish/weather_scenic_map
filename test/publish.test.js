@@ -50,12 +50,12 @@ test('P-3 網頁標示「天氣資料來源：交通部中央氣象署」，Open
   assert.match(html, /&copy; OpenStreetMap contributors/);
 });
 
-// 在暫存複本（lib、scripts、data、fixtures、index.html）裡跑 scripts/build-site.sh，
+// 在暫存複本（lib、scripts、data、fixtures、drive、index.html）裡跑 scripts/build-site.sh，
 // 網站輸出到 dir/_site，不碰 repo 真的 public/ 和 _site/
 function withCopy(fn) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'twm-site-'));
   try {
-    for (const sub of ['lib', 'scripts', 'data', 'fixtures']) fs.cpSync(path.join(root, sub), path.join(dir, sub), { recursive: true });
+    for (const sub of ['lib', 'scripts', 'data', 'fixtures', 'drive']) fs.cpSync(path.join(root, sub), path.join(dir, sub), { recursive: true });
     for (const f of ['index.html', 'README.md']) fs.copyFileSync(path.join(root, f), path.join(dir, f));
     fn(dir);
   } finally {
@@ -80,11 +80,14 @@ test('P-4 build-site.sh 用 fixture 跑：_site 只放網頁要用的檔，預�
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /景點：190 個/);
     const site = path.join(dir, '_site');
-    assert.deepEqual(listFiles(site), ['index.html', 'lib/day-labels.js', 'lib/spot-view.js', 'public/forecast.js', 'public/forecast.json']);
+    // drive/ 是事先算好的車程：一份索引加每個縣市一個檔，原樣帶過去
+    const driveFiles = listFiles(path.join(root, 'drive')).map((f) => 'drive/' + f);
+    assert.equal(driveFiles.length, 23);
+    assert.deepEqual(listFiles(site), [...driveFiles, 'index.html', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/spot-view.js', 'public/forecast.js', 'public/forecast.json'].sort());
     // index.html 用到的本機檔案（不是 CDN 的）在 _site 裡都找得到
     const page = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
     const local = [...page.matchAll(/(?:src="|fetch\(')([^"':]+?)["']/g)].map((m) => m[1]);
-    assert.deepEqual([...new Set(local)].sort(), ['lib/day-labels.js', 'lib/spot-view.js', 'public/forecast.js', 'public/forecast.json']);
+    assert.deepEqual([...new Set(local)].sort(), ['drive/index.js', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/spot-view.js', 'public/forecast.js', 'public/forecast.json']);
     for (const f of local) assert.ok(fs.existsSync(path.join(site, f)), f);
     assert.equal(JSON.parse(fs.readFileSync(path.join(site, 'public', 'forecast.json'), 'utf8')).spots.length, 190);
   });
