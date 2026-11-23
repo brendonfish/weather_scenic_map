@@ -6,157 +6,308 @@
 <title>旅遊天氣景點地圖</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha384-c6Rcwz4e4CITMbu/NBmnNS8yN2sC3cUElMEMfP3vqqKFp7GOYaaBBCqmaWBjmkjb" crossorigin="anonymous">
 <style>
-  html, body { margin: 0; height: 100%; font-family: -apple-system, "PingFang TC", "Noto Sans TC", sans-serif; }
-  #map { position: absolute; inset: 0; }
+  /* 介面只用黑白灰；紅黃綠只留給降雨機率，藍色只留給「偏冷」。 */
+  :root {
+    --ink: #1f2328; --ink-2: #57606a; --line: #8c959f; --hair: #d0d7de; --bg: #fff; --bg-2: #f6f7f8;
+    /* 降雨顏色：意義和門檻不能改。黃最亮、綠居中、紅最深，色盲也能靠深淺分。 */
+    --rain-green: #2fa866; --rain-yellow: #f2c230; --rain-red: #b3261e;
+    --cold: #1f5fbf;
+    --dot: 14px;      /* 標記看起來的大小，地圖放大時由程式調大 */
+    --sheet-h: 0px;   /* 手機底部景點資訊的高度，打開時由程式填 */
+  }
+  html, body { margin: 0; height: 100%; color: var(--ink);
+    font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    font-variant-numeric: tabular-nums; }
+  [hidden] { display: none !important; }
+  #map { position: absolute; inset: 0; background: #e9ecef; }
+  /* 底圖去色：山區的綠色不跟綠色標記搶。出處標示不受影響。 */
+  .leaflet-tile-pane { filter: grayscale(1) contrast(.9) brightness(1.06); opacity: .8; }
+  .leaflet-container { font: inherit; }
+  /* 手機底部的景點資訊打開時，縮放鈕和出處標示往上讓，不被蓋住 */
+  .leaflet-bottom { bottom: var(--sheet-h); }
+  /* 縮放鈕放大到好點的大小 */
+  .leaflet-bar a, .leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+
   .panel {
-    position: absolute; top: 10px; left: 50px; z-index: 1000;
-    background: #fff; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,.25);
-    padding: 10px 12px; font-size: 14px; max-width: 320px;
+    position: absolute; top: 10px; left: 10px; z-index: 1000; width: 300px; box-sizing: border-box;
+    background: var(--bg); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 12px; font-size: 14px;
   }
-  .panel h1 { font-size: 16px; margin: 0 0 8px; }
+  .panel h1 { font-size: 16px; margin: 0 0 10px; }
+  .days { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
   .days button {
-    border: 1px solid #999; background: #fff; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 14px;
+    flex: 1; min-height: 44px; border: 0; border-left: 1px solid var(--line); background: var(--bg);
+    color: var(--ink); font: inherit; cursor: pointer; padding: 0 4px;
   }
-  .days button.on { background: #333; color: #fff; border-color: #333; }
-  .row { margin-top: 8px; }
-  .legend span { display: inline-flex; align-items: center; margin-right: 8px; }
-  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 4px; border: 1px solid #333; }
+  .days button:first-child { border-left: 0; }
+  .days button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .days button:focus-visible, .more summary:focus-visible, .sheet button:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
+  .summary { margin: 10px 0 8px; font-weight: 600; }
+  .notice { margin: 0 0 8px; padding: 8px 10px; border: 1px solid var(--ink); border-radius: 6px; background: var(--bg-2); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 13px; color: var(--ink-2); }
+  .legend .title { flex-basis: 100%; }
+  .legend span { display: inline-flex; align-items: center; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 5px; border: 1.5px solid var(--ink); box-sizing: border-box; flex: none; }
   .sq { border-radius: 2px; }
-  .note { color: #666; font-size: 12px; }
-  .marker { width: 14px; height: 14px; border: 1.5px solid #222; border-radius: 50%; box-sizing: border-box; }
+  .ring { background: var(--bg); border-color: var(--cold); border-width: 2.5px; }
+  .more { margin-top: 6px; border-top: 1px solid var(--hair); }
+  .more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--ink-2); font-size: 13px; }
+  .more label { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
+  .more input { width: 18px; height: 18px; margin: 0; flex: none; }
+  .note { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
+
+  /* 標記：點擊範圍 32px，看起來是中間那顆小圓點 */
+  .spot { display: flex; align-items: center; justify-content: center; }
+  .marker { width: var(--dot); height: var(--dot); border: 1.5px solid var(--ink); border-radius: 50%; box-sizing: border-box; }
   .marker.indoor { border-radius: 2px; }
-  .c-green { background: #2e9d4c; } .c-yellow { background: #f2c230; } .c-red { background: #d93b3b; } .c-gray { background: #aaa; }
-  .popup table { border-collapse: collapse; margin-top: 4px; }
-  .popup td { padding: 1px 6px 1px 0; }
-  .cold { color: #1f5fbf; font-weight: bold; }
+  .marker.cold { outline: 2px solid var(--cold); outline-offset: 1px; }
+  .marker.sel { box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--ink); }
+  .c-green { background: var(--rain-green); } .c-yellow { background: var(--rain-yellow); } .c-red { background: var(--rain-red); }
+  /* 沒資料是空心的，跟「有資料」一眼分開 */
+  .c-gray { background: var(--bg); border-color: var(--line); }
+
+  /* 景點資訊：桌機放在地圖的資訊框裡，手機放在底部滑出的面板裡，內容一樣 */
+  .detail { font-size: 14px; line-height: 1.5; min-width: 220px; }
+  .detail .name { font-size: 16px; font-weight: 600; }
+  .detail .verdict { display: flex; align-items: center; margin: 2px 0; }
+  .detail .when, .detail .meta { color: var(--ink-2); font-size: 13px; }
+  .detail .slots { display: flex; gap: 6px; margin: 8px 0; text-align: center; }
+  .detail .slots div { flex: 1; background: var(--bg-2); border-radius: 6px; padding: 5px 0; }
+  .detail .slots span { display: block; color: var(--ink-2); font-size: 12px; }
+  .detail .is-cold { color: var(--cold); font-weight: 600; }
+  .detail .meta { margin-top: 6px; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 1001; box-sizing: border-box;
+    background: var(--bg); border-top: 1px solid var(--hair); border-radius: 14px 14px 0 0;
+    padding: 12px 56px 16px 14px;
+  }
+  .sheet button {
+    position: absolute; top: 4px; right: 4px; width: 44px; height: 44px; border: 0; background: none;
+    font-size: 22px; line-height: 1; color: var(--ink-2); cursor: pointer;
+  }
+
+  /* 手機：面板變成貼齊上緣的一條，只留日期、摘要、一行圖例；其他收進「圖例說明與設定」 */
+  @media (max-width: 599px) {
+    .panel { top: 0; left: 0; right: 0; width: auto; border-width: 0 0 1px; border-radius: 0 0 12px 12px; padding: 8px 10px 4px; }
+    .panel h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+    .summary { margin: 8px 0 6px; }
+  }
 </style>
 </head>
 <body>
-<div id="map"></div>
 <div class="panel">
   <h1>旅遊天氣景點地圖</h1>
-  <div class="days" id="days"></div>
-  <div class="row">
-    <label><input type="checkbox" id="hideIndoor"> 隱藏「室內」和「商圈、夜市、老街」</label>
-  </div>
-  <div class="row legend">
+  <div class="days" id="days" role="group" aria-label="選擇日期"></div>
+  <p class="summary" id="summary" aria-live="polite"></p>
+  <p class="notice" id="notice" role="status" hidden></p>
+  <div class="legend">
+    <span class="title">白天最高降雨機率（09:00–18:00）</span>
     <span><i class="dot c-green"></i>20% 以下</span>
     <span><i class="dot c-yellow"></i>30–50%</span>
     <span><i class="dot c-red"></i>60% 以上</span>
-    <span><i class="dot c-gray"></i>沒資料</span>
+    <span id="legendGray"><i class="dot c-gray"></i>沒資料</span>
   </div>
-  <div class="row legend"><span><i class="dot sq c-gray"></i>方形＝室內</span></div>
-  <div class="row note" id="info"></div>
-  <div class="row note">天氣資料來源：交通部中央氣象署</div>
+  <details class="more" id="more">
+    <summary>圖例說明與設定</summary>
+    <div class="legend">
+      <span><i class="dot ring"></i>藍框＝偏冷（體感 12°C 以下）</span>
+      <span><i class="dot sq c-gray"></i>方形＝室內</span>
+    </div>
+    <label><input type="checkbox" id="hideIndoor"> 只看戶外景點（隱藏室內、商圈、夜市、老街）</label>
+    <p class="note" id="info"></p>
+    <p class="note">天氣資料來源：交通部中央氣象署</p>
+  </details>
+</div>
+<div id="map" role="region" aria-label="台灣景點地圖"></div>
+<div class="sheet" id="sheet" hidden>
+  <button type="button" id="sheetClose" aria-label="關閉景點資訊">×</button>
+  <div id="sheetBody"></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO" crossorigin="anonymous"></script>
 <!-- 由 scripts/build-data.js 產出；直接雙擊打開網頁時用這份（瀏覽器不讓 file:// 用 fetch） -->
 <script src="public/forecast.js"></script>
 <script src="lib/day-labels.js"></script>
+<script src="lib/spot-view.js"></script>
 <script>
 (async function () {
   const HIDE_SETTINGS = ['室內', '商圈、夜市、老街（戶外街區）'];
-  // 「今天」用打開網頁時的台灣日期算；假資料沒有真的日期，用它的第一天當今天
+  // 綠色疊最上面：使用者要找的是綠色，不能被紅點蓋住
+  const Z_ORDER = { green: 300, yellow: 200, red: 100, gray: 0 };
+  const $ = (id) => document.getElementById(id);
+  // 599px 要跟上面 CSS 的 @media 一樣
+  const mq = window.matchMedia('(max-width: 599px)');
+  const narrow = () => mq.matches;
+
+  function notice(text) {
+    $('notice').textContent = text;
+    $('notice').hidden = !text;
+  }
 
   let data = window.FORECAST_DATA;
   if (!data) {
     try {
       data = await fetch('public/forecast.json').then((r) => r.json());
     } catch (e) {
-      document.getElementById('info').textContent =
-        '讀不到 public/forecast.json。請先跑 node scripts/build-data.js --fixture';
+      notice('預報資料暫時讀不到，請稍後重新整理。');
       return;
     }
   }
 
-  const map = L.map('map').setView([23.7, 121], 8);
+  // 桌機先把「圖例說明與設定」打開；手機收著，地圖才看得到
+  $('more').open = !narrow();
+
+  const map = L.map('map', { zoomControl: false, zoomSnap: 0.25 });
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map);
 
+  // 「今天」用打開網頁時的台灣日期算；假資料沒有真的日期，用它的第一天當今天
   const nowTaipei = DayLabels.taipeiDate(Date.now());
   const today = data.source === 'fixture' ? data.days[0] : nowTaipei;
   let dayIndex = DayLabels.defaultIndex(data.days, today);
+  let selected = null;     // 目前打開資訊的景點；切換日期時留著，方便比較同一個景點
+  let reopening = false;   // 程式自己換資訊框內容時，不要當成使用者關掉
   const layer = L.layerGroup().addTo(map);
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const fmtPop = (v) => (v === null || v === undefined ? '—' : v + '%');
+  const hour = (t) => String(t).replace(/^0?(\d+):00$/, '$1'); // 09:00 → 9
+  const dayOf = (s) => (s.forecast ? s.forecast[dayIndex] : null);
 
-  function popupHtml(s, day) {
-    const isIndoor = s.setting === '室內';
-    let html = `<div class="popup"><b>${esc(s.name)}</b>${isIndoor ? '（室內）' : ''}<br>` +
-      `${esc(s.county)}${esc(s.town)}<br>` +
-      `2025 遊客人次：${Number(s.visitors).toLocaleString('zh-TW')}<br>` +
-      `類型：${esc(s.setting)}<br>`;
+  // 景點資訊：先講結論，再講各時段，最後才是景點本身的資料
+  function detailHtml(s, day) {
+    const color = SpotView.colorOf(s, dayIndex);
+    let html = `<div class="detail"><div class="name">${esc(s.name)}${s.setting === '室內' ? '（室內）' : ''}</div>` +
+      `<div class="verdict"><i class="dot c-${color}"></i>${esc(SpotView.verdict(day))}</div>`;
     if (!day) {
-      html += '這個景點對不到鄉鎮預報，沒有天氣資料。</div>';
-      return html;
-    }
-    const name = DayLabels.dayName(day.date, today);
-    html += day.partial
-      ? `<b>${esc(name)}（剩下的時段） ${esc(day.date)}</b>`
-      : `<b>${esc(name)} ${esc(day.date)} 09:00–18:00</b>`;
-    if (day.coverUntil) {
-      html += `<br>預報只到 ${esc(day.coverUntil)}，之後的時段還沒有預報，這天先不標顏色。`;
-    }
-    if (!day.slots.length) {
-      html += '<br>這天這個時段沒有預報資料。';
+      html += '<div class="when">這個景點對不到鄉鎮預報。</div>';
     } else {
-      html += '<table>' + day.slots.map((x) =>
-        `<tr><td>${esc(x.start)}–${esc(x.end)}</td><td>降雨 ${fmtPop(x.pop)}</td></tr>`).join('') + '</table>';
+      const name = DayLabels.dayName(day.date, today);
+      html += `<div class="when">${esc(name)}${day.partial ? '（剩下的時段）' : ''} ${esc(SpotView.dateText(day.date))}` +
+        `${day.partial ? '' : ' 09:00–18:00'}</div>`;
+      if (day.coverUntil) {
+        html += `<div class="when">預報只到 ${esc(day.coverUntil)}，之後的時段還沒有預報，這天先不標顏色。</div>`;
+      }
+      html += day.slots.length
+        ? '<div class="slots">' + day.slots.map((x) =>
+          `<div><span>${esc(hour(x.start))}–${esc(hour(x.end))} 點</span>${fmtPop(x.pop)}</div>`).join('') + '</div>'
+        : '<div class="when">這天這個時段沒有預報資料。</div>';
+      html += `<div class="${day.cold ? 'is-cold' : ''}">最低體感 ${day.minAT === null ? '—' : esc(day.minAT) + '°C'}` +
+        `${day.cold ? ' · 偏冷' : ''}</div>`;
     }
-    html += `最高降雨機率：${fmtPop(day.maxPop)}<br>`;
-    html += `最低體感溫度：${day.minAT === null ? '—' : esc(day.minAT) + '°C'}` +
-      (day.cold ? ' <span class="cold">偏冷</span>' : '');
-    return html + '</div>';
+    return html + `<div class="meta">${esc(s.county)}${esc(s.town)} · ${esc(s.setting)} · ` +
+      `2025 遊客 ${Number(s.visitors).toLocaleString('zh-TW')} 人次</div></div>`;
+  }
+
+  function closeSheet() {
+    $('sheet').hidden = true;
+    document.documentElement.style.setProperty('--sheet-h', '0px');
+  }
+
+  // 手機用底部面板（不會被上面的面板蓋住），桌機用地圖的資訊框
+  function showDetail() {
+    if (!selected) return;
+    const html = detailHtml(selected, dayOf(selected));
+    const at = [selected.lat, selected.lng];
+    reopening = true;
+    if (narrow()) {
+      map.closePopup();
+      $('sheetBody').innerHTML = html;
+      $('sheet').hidden = false;
+      const h = $('sheet').offsetHeight;
+      document.documentElement.style.setProperty('--sheet-h', h + 'px');
+      map.panInside(at, { paddingTopLeft: [24, $('days').parentNode.offsetHeight + 24], paddingBottomRight: [24, h + 24] });
+    } else {
+      closeSheet();
+      L.popup({ maxWidth: 300, autoPanPaddingTopLeft: [$('days').parentNode.offsetWidth + 24, 16] })
+        .setLatLng(at).setContent(html).openOn(map);
+    }
+    reopening = false;
+  }
+
+  function unselect() {
+    if (reopening || !selected) return;
+    selected = null;
+    render();
   }
 
   function render() {
     layer.clearLayers();
-    const hide = document.getElementById('hideIndoor').checked;
-    let shown = 0;
-    for (const s of data.spots) {
-      if (hide && HIDE_SETTINGS.includes(s.setting)) continue;
-      const day = s.forecast ? s.forecast[dayIndex] : null;
-      const color = day ? day.color : 'gray';
-      const indoor = s.setting === '室內';
+    const hide = $('hideIndoor').checked;
+    const visible = data.spots.filter((s) => !(hide && HIDE_SETTINGS.includes(s.setting)));
+    for (const s of visible) {
+      const day = dayOf(s);
+      const color = SpotView.colorOf(s, dayIndex);
+      const cls = `marker c-${color}${s.setting === '室內' ? ' indoor' : ''}${day && day.cold ? ' cold' : ''}${s === selected ? ' sel' : ''}`;
       const icon = L.divIcon({
-        className: '',
-        html: `<div class="marker c-${color}${indoor ? ' indoor' : ''}" data-color="${color}"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
+        className: 'spot',
+        html: `<div class="${cls}" data-color="${color}"></div>`,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
       });
-      L.marker([s.lat, s.lng], { icon, title: s.name })
-        .bindPopup(() => popupHtml(s, day))
+      // title 也寫出結論：不靠顏色、用螢幕報讀也知道會不會下雨
+      L.marker([s.lat, s.lng], { icon, title: `${s.name}：${SpotView.verdict(day)}`, zIndexOffset: (s === selected ? 1000 : 0) + Z_ORDER[color] })
+        .on('click', () => { selected = s; render(); showDetail(); })
         .addTo(layer);
-      shown++;
     }
-    let src = data.source === 'fixture' ? '（假資料，不是真的天氣）' : '';
-    // 資料最後一天比今天還早：太舊，提醒重跑
-    if (data.source !== 'fixture' && DayLabels.isStale(data.days, nowTaipei)) {
-      src += `（注意：這份預報只到 ${data.days[data.days.length - 1]}，已經過期。請重跑 node scripts/build-data.js）`;
-    }
-    document.getElementById('info').textContent =
-      `顯示 ${shown} / ${data.spots.length} 個景點${src}。${DayLabels.updatedText(data.generatedAt)}`;
+    const summary = SpotView.summarize(visible, dayIndex);
+    $('summary').textContent = SpotView.summaryText(summary);
+    // 這天沒有灰色的景點，圖例就不用佔一格
+    $('legendGray').hidden = summary.gray === 0;
+    $('info').textContent = `顯示 ${visible.length} / ${data.spots.length} 個景點。${DayLabels.updatedText(data.generatedAt)}`;
   }
 
-  const daysEl = document.getElementById('days');
+  if (data.source === 'fixture') {
+    notice('這是測試用的假資料，不是真的天氣。');
+  } else if (DayLabels.isStale(data.days, nowTaipei)) {
+    // 資料最後一天比今天還早：太舊
+    const last = data.days[data.days.length - 1];
+    notice(last ? `這份預報只到 ${SpotView.dateText(last)}，已經過期，請稍後再回來看。` : '目前沒有預報資料，請稍後再回來看。');
+  }
+
+  const daysEl = $('days');
   data.days.forEach((d, i) => {
     const b = document.createElement('button');
+    b.type = 'button';
     b.textContent = DayLabels.buttonText(d, today);
+    b.setAttribute('aria-pressed', String(i === dayIndex));
     b.onclick = () => {
       dayIndex = i;
-      [...daysEl.children].forEach((x, j) => x.classList.toggle('on', j === i));
-      map.closePopup();
+      [...daysEl.children].forEach((x, j) => x.setAttribute('aria-pressed', String(j === i)));
       render();
+      showDetail();
     };
-    if (i === dayIndex) b.classList.add('on');
     daysEl.appendChild(b);
   });
-  document.getElementById('hideIndoor').onchange = render;
+  $('hideIndoor').onchange = () => {
+    // 被篩掉的景點，資訊也一起收起來
+    if (selected && $('hideIndoor').checked && HIDE_SETTINGS.includes(selected.setting)) {
+      selected = null;
+      closeSheet();
+      map.closePopup();
+    }
+    render();
+  };
+  $('sheetClose').onclick = () => { closeSheet(); unselect(); };
+  map.on('popupclose', unselect);
+  // 手機轉向或視窗拉寬拉窄：景點資訊換到對的位置，圖例說明照新的寬度開或收
+  mq.addEventListener('change', () => { $('more').open = !narrow(); showDetail(); });
+  // 地圖放大，標記跟著變大，比較好點
+  map.on('zoomend', () => {
+    const z = map.getZoom();
+    document.documentElement.style.setProperty('--dot', (z >= 11 ? 22 : z >= 9.5 ? 18 : 14) + 'px');
+  });
+
   render();
+  // 一開始把台灣本島和澎湖放進沒被面板擋住的範圍
+  const panel = daysEl.parentNode;
+  map.fitBounds([[21.85, 119.4], [25.35, 122.05]], {
+    paddingTopLeft: narrow() ? [8, panel.offsetHeight + 8] : [panel.offsetWidth + 16, 8],
+    paddingBottomRight: [8, 28],
+  });
 })();
 </script>
 </body>
