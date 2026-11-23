@@ -130,3 +130,17 @@ test('P-6 workflow：每天台北 05:30、11:30、17:30 跑，可以手動觸發
   assert.doesNotMatch(y, /CWA-[0-9A-F]{8}/i);
   assert.doesNotMatch(y, /echo[^\n]*CWA_API_KEY/);
 });
+
+// 卡片：https://trello.com/c/MWTHeYX9 （加 GA4 追蹤碼）
+test('P-7 build-site.sh 產出的 index.html：<head> 裡有 GA4 追蹤碼 G-TM7NLQ9HVG，沒有 GTM-', () => {
+  withCopy((dir) => {
+    assert.equal(buildSite(dir, ['--fixture']).status, 0);
+    const page = fs.readFileSync(path.join(dir, '_site', 'index.html'), 'utf8');
+    const head = page.match(/<head>([\s\S]*?)<\/head>/)[1];
+    assert.match(head, /<script async src="https:\/\/www\.googletagmanager\.com\/gtag\/js\?id=G-TM7NLQ9HVG"><\/script>/);
+    assert.match(head, /gtag\('config', 'G-TM7NLQ9HVG'\);/);
+    assert.doesNotMatch(page, /GTM-/);
+    // 越前面越好：追蹤碼在 <title> 和樣式表前面
+    assert.ok(head.indexOf('G-TM7NLQ9HVG') < head.indexOf('<title>'), '追蹤碼要放在 <head> 前段');
+  });
+});
