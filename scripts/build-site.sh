@@ -12,6 +12,6 @@ node scripts/build-data.js "$@"
 
 mkdir -p _site/lib _site/public
 cp index.html _site/
-cp lib/day-labels.js _site/lib/
+cp lib/day-labels.js lib/spot-view.js _site/lib/
 cp public/forecast.json public/forecast.js _site/public/
 echo "網站檔案放在 _site/"

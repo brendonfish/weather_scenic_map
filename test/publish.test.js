@@ -11,6 +11,7 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { runPage } from './_page.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -22,28 +23,8 @@ function loadDayLabels() {
   return ctx.DayLabels;
 }
 
-// 在 node:vm 裡跑 index.html 最後那段程式（Leaflet 和 DOM 用假的），回傳畫面上 #info 的文字
-async function renderInfo(data) {
-  const els = {};
-  const el = () => ({
-    textContent: '', checked: false, children: [], onclick: null, onchange: null,
-    classList: { add() {}, toggle() {} },
-    appendChild(c) { this.children.push(c); },
-  });
-  const chain = () => ({ addTo() { return this; }, bindPopup() { return this; }, clearLayers() {}, setView() { return this; } });
-  const ctx = {
-    window: { FORECAST_DATA: data },
-    document: { getElementById: (id) => (els[id] ??= el()), createElement: () => el() },
-    L: { map: chain, tileLayer: chain, layerGroup: chain, marker: chain, divIcon: () => ({}) },
-    fetch: async () => { throw new Error('不該用到 fetch'); },
-    Date, Number, String,
-  };
-  vm.runInNewContext(fs.readFileSync(path.join(root, 'lib', 'day-labels.js'), 'utf8'), ctx);
-  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
-  vm.runInNewContext(scripts[scripts.length - 1][1], ctx);
-  await new Promise((r) => setTimeout(r, 0));
-  return els.info.textContent;
-}
+// 網頁 #info 那一行的文字（假 DOM 和假 Leaflet 在 test/_page.js）
+const renderInfo = async (data) => (await runPage(data)).els.info.textContent;
 
 test('P-1 DayLabels.updatedText：generatedAt 換成台北時間「預報更新於 MM/DD HH:MM」', () => {
   const D = loadDayLabels();
@@ -99,11 +80,11 @@ test('P-4 build-site.sh 用 fixture 跑：_site 只放網頁要用的檔，預�
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.match(r.stdout, /景點：190 個/);
     const site = path.join(dir, '_site');
-    assert.deepEqual(listFiles(site), ['index.html', 'lib/day-labels.js', 'public/forecast.js', 'public/forecast.json']);
+    assert.deepEqual(listFiles(site), ['index.html', 'lib/day-labels.js', 'lib/spot-view.js', 'public/forecast.js', 'public/forecast.json']);
     // index.html 用到的本機檔案（不是 CDN 的）在 _site 裡都找得到
     const page = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
     const local = [...page.matchAll(/(?:src="|fetch\(')([^"':]+?)["']/g)].map((m) => m[1]);
-    assert.deepEqual([...new Set(local)].sort(), ['lib/day-labels.js', 'public/forecast.js', 'public/forecast.json']);
+    assert.deepEqual([...new Set(local)].sort(), ['lib/day-labels.js', 'lib/spot-view.js', 'public/forecast.js', 'public/forecast.json']);
     for (const f of local) assert.ok(fs.existsSync(path.join(site, f)), f);
     assert.equal(JSON.parse(fs.readFileSync(path.join(site, 'public', 'forecast.json'), 'utf8')).spots.length, 190);
   });
