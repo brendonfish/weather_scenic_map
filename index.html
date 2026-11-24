@@ -29,9 +29,10 @@
     font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
     font-variant-numeric: tabular-nums; }
   [hidden] { display: none !important; }
-  /* 底圖用 CARTO Positron 淡色底圖：本來就沒有綠色山區，不用自己去色。
-     底色跟圖上的海同色，圖還沒載入時不會閃一塊灰。 */
-  #map { position: absolute; inset: 0; background: #d4dadc; }
+  #map { position: absolute; inset: 0; background: #eceeef; }
+  /* 底圖去色：山區的綠色不跟綠色標記搶。出處標示不受影響。
+     加一點暖色、調淡對比，讓地圖退到後面，跟面板的米白同一個色調。 */
+  .leaflet-tile-pane { filter: grayscale(1) sepia(.12) contrast(.82) brightness(1.1); opacity: .85; }
   .leaflet-container { font: inherit; }
   /* 手機底部的景點資訊打開時，縮放鈕和出處標示往上讓，不被蓋住 */
   .leaflet-bottom { bottom: var(--sheet-h); }
@@ -204,10 +205,9 @@
 
   const map = L.map('map', { zoomControl: false, zoomSnap: 0.25 });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    subdomains: 'abcd',
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map);
 
   // 「今天」用打開網頁時的台灣日期算；假資料沒有真的日期，用它的第一天當今天
