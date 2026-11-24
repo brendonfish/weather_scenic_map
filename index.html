@@ -29,10 +29,11 @@
     font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
     font-variant-numeric: tabular-nums; }
   [hidden] { display: none !important; }
-  #map { position: absolute; inset: 0; background: #eceeef; }
-  /* 底圖去色：山區的綠色不跟綠色標記搶。出處標示不受影響。
-     加一點暖色、調淡對比，讓地圖退到後面，跟面板的米白同一個色調。 */
-  .leaflet-tile-pane { filter: grayscale(1) sepia(.12) contrast(.82) brightness(1.1); opacity: .85; }
+  /* 底圖：國土測繪中心「臺灣通用電子地圖」。全台只有縣市名、放大才有鄉鎮名，沒有小路小地名，地名是中文。
+     保留顏色但彩度壓低、整體調亮（深海也跟著變淡），地圖退到後面，景點的紅黃綠才是畫面主角。
+     底色跟調淡後的海同色，圖還沒載入時不會閃一塊別的顏色。 */
+  #map { position: absolute; inset: 0; background: #d3e0ec; }
+  .leaflet-tile-pane { filter: saturate(.4) brightness(1.16) contrast(.82); }
   .leaflet-container { font: inherit; }
   /* 手機底部的景點資訊打開時，縮放鈕和出處標示往上讓，不被蓋住 */
   .leaflet-bottom { bottom: var(--sheet-h); }
@@ -82,10 +83,12 @@
 
   /* 標記：點擊範圍 32px，看起來是中間那顆小圓點 */
   .spot { display: flex; align-items: center; justify-content: center; }
-  .marker { width: var(--dot); height: var(--dot); border: 1.5px solid var(--ink); border-radius: 50%; box-sizing: border-box; }
+  /* 白邊加淡陰影：底圖有顏色（綠色山區、藍色的海），景點要浮在上面，邊緣才切得開 */
+  .marker { width: var(--dot); height: var(--dot); border: 1.5px solid var(--ink); border-radius: 50%; box-sizing: border-box;
+    box-shadow: 0 0 0 2px #fff, 0 1px 4px 1px rgb(31 35 40 / .35); }
   .marker.indoor { border-radius: 2px; }
   .marker.cold { outline: 2px solid var(--cold); outline-offset: 1px; }
-  .marker.sel { box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--ink); }
+  .marker.sel { box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px var(--ink), 0 2px 8px 4px rgb(31 35 40 / .3); }
   .c-green { background: var(--rain-green); } .c-yellow { background: var(--rain-yellow); } .c-red { background: var(--rain-red); }
   /* 沒資料是空心的，跟「有資料」一眼分開 */
   .c-gray { background: var(--bg); border-color: var(--line); }
@@ -205,9 +208,10 @@
 
   const map = L.map('map', { zoomControl: false, zoomSnap: 0.25 });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // 政府資料開放授權，免金鑰、免費。車程和部分景點座標來自 OpenStreetMap，出處照樣標示。
+  L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
     maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors',
+    attribution: '地圖 &copy; 內政部國土測繪中心 | 車程與景點座標 &copy; OpenStreetMap contributors',
   }).addTo(map);
 
   // 「今天」用打開網頁時的台灣日期算；假資料沒有真的日期，用它的第一天當今天
