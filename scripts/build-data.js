@@ -1,4 +1,6 @@
-// 產出網頁要用的 public/forecast.json（另外寫一份 public/forecast.js，讓直接雙擊打開 index.html 也讀得到）。
+// 產出網頁要用的 public/forecast.json（預報按鄉鎮存）和 public/attractions.json（景點檔，從 data/attractions.json 複製），
+// 各另外寫一份 .js，讓直接雙擊打開 index.html 也讀得到。
+// 景點檔 data/attractions.json 是事先做好、commit 在 repo 裡的（scripts/build-attractions.js），這支不重做、不下載。
 //
 // 跑法：
 //   node scripts/build-data.js --fixture   用 fixtures/ 的假預報，不連網路
@@ -8,9 +10,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  readSpots,
   loadFixtureResponses,
-  buildForecast,
+  buildTownForecast,
   pickDays,
   checkCountyCoverage,
 } from '../lib/forecast.js';
@@ -48,7 +49,8 @@ async function main() {
   if (unknown.length) {
     throw new Error(`不認得的參數：${unknown.join(' ')}。要用假資料請加 --fixture；抓氣象署不用加參數。`);
   }
-  const spots = readSpots(path.join(root, 'data', 'spots_2025_top10.csv'));
+  const attractionsText = fs.readFileSync(path.join(root, 'data', 'attractions.json'), 'utf8');
+  const spots = JSON.parse(attractionsText);
   let responses;
   let nowMs;
   if (useFixture) {
@@ -67,11 +69,15 @@ async function main() {
   }
   const coverage = checkCountyCoverage(responses, days, nowMs);
   if (coverage.error) throw new Error(coverage.error);
-  const data = buildForecast(spots, responses, days, { source: useFixture ? 'fixture' : 'cwa', nowMs });
+  const data = buildTownForecast(spots, responses, days, { source: useFixture ? 'fixture' : 'cwa', nowMs });
   const outDir = path.join(root, 'public');
   fs.mkdirSync(outDir, { recursive: true });
   const json = JSON.stringify(data);
+  const attractionsJson = JSON.stringify(spots);
+  // 四個檔一起換：景點檔先換（網頁拿新景點配舊預報，只是新景點沒顏色；反過來會整片對不上）
   writeOutputs(outDir, [
+    ['attractions.js', `window.ATTRACTIONS_DATA = ${attractionsJson};\n`],
+    ['attractions.json', attractionsJson + '\n'],
     ['forecast.js', `window.FORECAST_DATA = ${json};\n`],
     ['forecast.json', json + '\n'],
   ]);
@@ -81,19 +87,18 @@ async function main() {
   if (days.length < 3) {
     console.log(`其他天的 09:00–18:00 沒有完整的預報，這次只收 ${days.length} 天。`);
   }
-  if (data.spots.some((s) => s.forecast?.[0]?.partial)) {
+  if (Object.values(data.towns).some((t) => t[0]?.partial)) {
     console.log(`${days[0]} 已經過了一部分，只算還沒過的時段。`);
   }
-  console.log(`景點：${data.spots.length} 個，寫到 public/forecast.json`);
+  console.log(`景點：${spots.length} 個（第 1 層 ${spots.filter((s) => s.layer === 1).length} 個），預報 ${Object.keys(data.towns).length} 個鄉鎮，寫到 public/forecast.json、public/attractions.json`);
   if (coverage.missing.length) {
     console.log(`${coverage.missing.length} 個縣市沒有 ${days.join('、')} 的資料（地圖上會是灰色）：${coverage.missing.join('、')}`);
   }
-  if (data.unmatched.length) {
-    console.log(`對不到鄉鎮的景點 ${data.unmatched.length} 個（天氣留空）：`);
-    for (const u of data.unmatched) console.log(`  - ${u.county}${u.town} ${u.name}`);
-  } else {
-    console.log('每個景點都對到鄉鎮預報。');
-  }
+  const unmatchedSpots = data.unmatched.reduce((n, u) => n + u.count, 0);
+  console.log(`對不到鄉鎮預報的景點 ${unmatchedSpots} 個（天氣留空）${unmatchedSpots ? '：' : '。'}`);
+  // 鄉鎮很多時只列前 20 個，免得洗版（全部在 forecast.json 的 unmatched）
+  for (const u of data.unmatched.slice(0, 20)) console.log(`  - ${u.county}${u.town}：${u.count} 個景點`);
+  if (data.unmatched.length > 20) console.log(`  …共 ${data.unmatched.length} 個鄉鎮，全部列在 forecast.json 的 unmatched`);
 }
 
 main().catch((err) => {

@@ -18,6 +18,7 @@ import {
   pickDays,
   checkCountyCoverage,
   COUNTY_DATASETS,
+  normalizeName,
 } from '../lib/forecast.js';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -45,6 +46,11 @@ const night = fixtures.map((r) => shift(r, at('2026-11-21T00:00:00') - at('2026-
 // 挪到 2026-11-21 12:00 開始：等於 2026-11-21 中午抓到的預報（今天 12–15 那段還在）
 const noon = fixtures.map((r) => shift(r, at('2026-11-21T12:00:00') - at('2026-11-19T06:00:00')));
 
+// forecast.json 現在按鄉鎮存：把 190 個景點接上自己鄉鎮的預報，才能用下面的 allGrayDays
+const withSpots = (data) => ({
+  ...data,
+  spots: spots.map((s) => ({ ...s, forecast: data.towns[`${normalizeName(s.county)}|${normalizeName(s.town)}`] ?? null })),
+});
 const allGrayDays = (out) =>
   out.days.filter((_, i) => out.spots.every((s) => !s.forecast || s.forecast[i].color === 'gray'));
 
@@ -177,8 +183,8 @@ test('N-10 build-data.js 23:19 跑：forecast.json 的 days 是 11/21、11/22、
   const r = runBuild(night, at('2026-11-20T23:19:00'));
   assert.equal(r.status, 0, r.stderr);
   assert.deepEqual(r.data.days, ['2026-11-21', '2026-11-22', '2026-11-23']);
-  assert.equal(r.data.spots.length, 190);
-  assert.deepEqual(allGrayDays(r.data), []);
+  assert.equal(withSpots(r.data).spots.filter((x) => x.forecast).length, 190);
+  assert.deepEqual(allGrayDays(withSpots(r.data)), []);
   assert.match(r.stdout, /日期：2026-11-21、2026-11-22、2026-11-23/);
 });
 
@@ -194,7 +200,7 @@ test('N-12 build-data.js 14:00 跑：今天只剩 15:00–18:00，標成剩下�
   const r = runBuild(noon, at('2026-11-21T14:00:00'));
   assert.equal(r.status, 0, r.stderr);
   assert.equal(r.data.days[0], '2026-11-21');
-  const today = r.data.spots[0].forecast[0];
+  const today = withSpots(r.data).spots[0].forecast[0];
   assert.deepEqual(today.slots.map((x) => x.start), ['15:00']);
   assert.equal(today.partial, true);
 });

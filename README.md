@@ -13,7 +13,7 @@ node scripts/build-data.js --fixture
 CWA_API_KEY=你的授權碼 node scripts/build-data.js
 ```
 
-跑完會產出 `public/forecast.json` 和 `public/forecast.js`，再用瀏覽器打開 `index.html`。
+跑完會產出 `public/forecast.json`、`public/forecast.js`（預報，按鄉鎮存）和 `public/attractions.json`、`public/attractions.js`（景點，從 `data/attractions.json` 複製），再用瀏覽器打開 `index.html`。
 
 測試：`node --test`
 
@@ -57,6 +57,36 @@ repo 頁面 → Actions → 左邊選「更新天氣預報」→ 右邊「Run wo
 
 景點資訊最下面有「用 Google 地圖規劃路線」的按鈕，會在新分頁打開 Google 地圖的開車路線，目的地是這個景點的座標，出發地由 Google 用你現在的位置（跟上面選的出發地無關）。這只是一個連結，網頁自己不連 Google，也不需要授權碼。
 
+## 景點資料（觀光署）
+
+景點檔是 `data/attractions.json`（commit 在 repo 裡），來源是交通部觀光署的「景點資料庫」和「歷年國內主要觀光遊憩據點遊客人數月別統計」（政府資料開放授權條款第 1 版）。
+**它不會自動更新**：每日排程和 GitHub Actions 只更新天氣預報，不下載景點資料。網頁目前只畫第 1 層（原本的 190 個熱門景點）。
+
+每一筆有：名稱、座標、縣市、鄉鎮、`layer`（1–4 層）、`types`（類型，第一個是主要類型）、`weatherFit`（好天氣才去／雨天備案／不分）、`richness`（資料豐富度 0–6）、`image`（第一張照片的網址和名稱）、`excerpt`（描述前 60 字）、`website`。規則寫在 `lib/attractions.js` 的註解。
+
+- 第 1 層：`data/spots_2025_top10.csv` 的 190 個（座標、人次、室內戶外照原本的）。
+- 第 2 層：2024 人次統計裡不在那 190 個、名字跟景點資料庫完全一樣（同縣市）的。名字只有部分相同的列在 `data/layer2-matches.csv` 等人工檢查，這一版不放；對不上的不放、不猜座標。
+- 第 3 層：其餘景點以縣市＋鄉鎮分組，每組取資料豐富度最高的四分之一（最少 2、最多 10）。數字在 `data/layer-config.json`。
+- 第 4 層：其餘全部。
+
+天氣預報按鄉鎮存在 `public/forecast.json` 的 `towns`（「縣市|鄉鎮」，台寫成臺），景點用自己的縣市＋鄉鎮去查。
+
+### 怎麼手動重跑景點資料
+
+大概半年做一次就好（觀光署會新增、停業景點）。在本機跑：
+
+```bash
+# 1. 下載原始檔到 data/raw/（約 3 MB 壓縮檔＋0.6 MB CSV，不 commit）
+node scripts/fetch-attractions.js
+# 2. 清理、分層、分類，產出 data/attractions.json 和 data/layer2-matches.csv，終端機會印出各層、各類型的數量
+node scripts/build-attractions.js
+# 3. 確認測試還是全過，再用假預報 build 一次看看
+node --test
+node scripts/build-data.js --fixture
+```
+
+跑完看一下 `git diff --stat data/`，確認數量變化合理再 commit。景點清單變了，車程（`drive/`）不會自動跟著變；車程目前只算第 1 層的 190 個。
+
 ## 會收哪幾天
 
 - 從今天開始，只收 09:00–18:00 還有預報時段的日子，收滿 3 天。晚上跑（今天的時段都過了）就從明天開始。
@@ -78,13 +108,13 @@ repo 頁面 → Actions → 左邊選「更新天氣預報」→ 右邊「Run wo
 - 降雨機率不在 0–100、體感溫度不在 -50～60 度（例如 -99），當作沒有資料。
 - 09:00–18:00 只要有一段讀不到降雨機率，當天顯示灰色，明細照樣顯示。
 - 某個景點當天的預報沒有涵蓋到 18:00（例如抓到一半氣象署剛好更新，這個縣市拿到只到中午的舊版），那天這個景點顯示灰色，景點資訊寫「預報只到 HH:MM」，也不標「偏冷」。其他景點照常顯示。
-- 兩個輸出檔先寫成暫存檔再換上去。
+- 四個輸出檔先寫成暫存檔再換上去（景點檔先換，預報檔後換）。
 
 ## 已知問題（MVP 先不修）
 
 1. 某一段 3 小時預報的「時間」讀不出來時，那一段會被直接丟掉，最高降雨機率用剩下的時段算，可能被低估（顏色偏綠）。
 2. 最低體感溫度沒有比照降雨機率「有一筆讀不到就留空」。最冷的那一筆是「-」時，會用其他時段的溫度，可能少標「偏冷」。
-3. `forecast.js` 已經換成新的、接著 `forecast.json` 換失敗時，兩個檔內容會不一致（程式會報錯結束）。只有兩個檔都在同一個資料夾、而且只有第二個換失敗才會發生。
+3. 四個輸出檔換到一半失敗時（例如景點檔換好了、`forecast.json` 換失敗），檔案內容會不一致（程式會報錯結束）。只有後面的檔換失敗才會發生。
 
 ## 還沒驗證
 

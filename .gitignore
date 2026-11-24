@@ -29,3 +29,6 @@ _site/
 
 # 算車程用的路網資料和 OSRM 暫存檔（很大，算完可以刪）
 .osrm/
+
+# 觀光署原始下載檔（約 12 MB，用 scripts/fetch-attractions.js 重抓）
+data/raw/

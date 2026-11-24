@@ -12,8 +12,8 @@ node scripts/build-data.js "$@"
 
 mkdir -p _site/lib _site/public
 cp index.html _site/
-cp lib/day-labels.js lib/spot-view.js lib/drive-time.js _site/lib/
+cp lib/day-labels.js lib/spot-view.js lib/drive-time.js lib/spot-join.js _site/lib/
 # 事先算好的車程（commit 在 repo 裡，這裡不重算）
 cp -R drive _site/drive
-cp public/forecast.json public/forecast.js _site/public/
+cp public/forecast.json public/forecast.js public/attractions.json public/attractions.js _site/public/
 echo "網站檔案放在 _site/"

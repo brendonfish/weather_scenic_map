@@ -74,22 +74,24 @@ function listFiles(dir, base = dir) {
     d.isDirectory() ? listFiles(path.join(dir, d.name), base) : [path.relative(base, path.join(dir, d.name))]).sort();
 }
 
-test('P-4 build-site.sh 用 fixture 跑：_site 只放網頁要用的檔，預報 190 個景點', () => {
+test('P-4 build-site.sh 用 fixture 跑：_site 只放網頁要用的檔，網頁畫 190 個第 1 層景點', () => {
   withCopy((dir) => {
     const r = buildSite(dir, ['--fixture']);
     assert.equal(r.status, 0, r.stdout + r.stderr);
-    assert.match(r.stdout, /景點：190 個/);
+    assert.match(r.stdout, /第 1 層 190 個/);
     const site = path.join(dir, '_site');
     // drive/ 是事先算好的車程：一份索引加每個縣市一個檔，原樣帶過去
     const driveFiles = listFiles(path.join(root, 'drive')).map((f) => 'drive/' + f);
     assert.equal(driveFiles.length, 23);
-    assert.deepEqual(listFiles(site), [...driveFiles, 'index.html', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/spot-view.js', 'public/forecast.js', 'public/forecast.json'].sort());
+    assert.deepEqual(listFiles(site), [...driveFiles, 'index.html', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/spot-join.js', 'lib/spot-view.js', 'public/attractions.js', 'public/attractions.json', 'public/forecast.js', 'public/forecast.json'].sort());
     // index.html 用到的本機檔案（不是 CDN 的）在 _site 裡都找得到
     const page = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
     const local = [...page.matchAll(/(?:src="|fetch\(')([^"':]+?)["']/g)].map((m) => m[1]);
-    assert.deepEqual([...new Set(local)].sort(), ['drive/index.js', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/spot-view.js', 'public/forecast.js', 'public/forecast.json']);
+    assert.deepEqual([...new Set(local)].sort(), ['drive/index.js', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/spot-join.js', 'lib/spot-view.js', 'public/attractions.js', 'public/attractions.json', 'public/forecast.js', 'public/forecast.json']);
     for (const f of local) assert.ok(fs.existsSync(path.join(site, f)), f);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(site, 'public', 'forecast.json'), 'utf8')).spots.length, 190);
+    const attractions = JSON.parse(fs.readFileSync(path.join(site, 'public', 'attractions.json'), 'utf8'));
+    assert.equal(attractions.filter((a) => a.layer === 1).length, 190);
+    assert.ok(JSON.parse(fs.readFileSync(path.join(site, 'public', 'forecast.json'), 'utf8')).towns);
   });
 });
 
