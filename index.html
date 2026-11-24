@@ -15,7 +15,10 @@
 <style>
   /* 介面只用黑白灰；紅黃綠只留給降雨機率，藍色只留給「偏冷」。 */
   :root {
-    --ink: #1f2328; --ink-2: #57606a; --line: #8c959f; --hair: #d0d7de; --bg: #fff; --bg-2: #f6f7f8;
+    --ink: #1f2328; --ink-2: #57606a; --line: #8c959f; --hair: #d0d7de; --bg: #fff; --bg-2: #f2f4f5;
+    /* 浮在地圖上的面板：底色跟淡色底圖的陸地同一個色，用陰影跟地圖分開，不用框線 */
+    --surface: #fbfbfa;
+    --float: 0 1px 2px rgb(31 35 40 / .08), 0 6px 20px -6px rgb(31 35 40 / .18);
     /* 降雨顏色：意義和門檻不能改。黃最亮、綠居中、紅最深，色盲也能靠深淺分。 */
     --rain-green: #2fa866; --rain-yellow: #f2c230; --rain-red: #b3261e;
     --cold: #1f5fbf;
@@ -26,18 +29,22 @@
     font-family: -apple-system, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
     font-variant-numeric: tabular-nums; }
   [hidden] { display: none !important; }
-  #map { position: absolute; inset: 0; background: #e9ecef; }
-  /* 底圖去色：山區的綠色不跟綠色標記搶。出處標示不受影響。 */
-  .leaflet-tile-pane { filter: grayscale(1) contrast(.9) brightness(1.06); opacity: .8; }
+  /* 底圖用 CARTO Positron 淡色底圖：本來就沒有綠色山區，不用自己去色。
+     底色跟圖上的海同色，圖還沒載入時不會閃一塊灰。 */
+  #map { position: absolute; inset: 0; background: #d4dadc; }
   .leaflet-container { font: inherit; }
   /* 手機底部的景點資訊打開時，縮放鈕和出處標示往上讓，不被蓋住 */
   .leaflet-bottom { bottom: var(--sheet-h); }
   /* 縮放鈕放大到好點的大小 */
-  .leaflet-bar a, .leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; }
+  .leaflet-bar a, .leaflet-touch .leaflet-bar a { width: 44px; height: 44px; line-height: 44px; background: var(--surface); color: var(--ink); }
+  .leaflet-touch .leaflet-bar, .leaflet-bar { border: 0; box-shadow: var(--float); border-radius: 10px; overflow: hidden; }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: var(--surface); box-shadow: var(--float); }
+  .leaflet-popup-content-wrapper { border-radius: 12px; }
+  .leaflet-container .leaflet-control-attribution { background: rgb(251 251 250 / .85); color: var(--ink-2); }
 
   .panel {
     position: absolute; top: 10px; left: 10px; z-index: 1000; width: 300px; box-sizing: border-box;
-    background: var(--bg); border: 1px solid var(--hair); border-radius: 10px;
+    background: var(--surface); border-radius: 12px; box-shadow: var(--float);
     padding: 12px; font-size: 14px;
   }
   .panel h1 { font-size: 16px; margin: 0 0 10px; }
@@ -99,7 +106,8 @@
   .detail .route:hover { background: var(--bg-2); }
   .sheet {
     position: absolute; left: 0; right: 0; bottom: 0; z-index: 1001; box-sizing: border-box;
-    background: var(--bg); border-top: 1px solid var(--hair); border-radius: 14px 14px 0 0;
+    background: var(--surface); border-radius: 14px 14px 0 0;
+    box-shadow: 0 -1px 2px rgb(31 35 40 / .06), 0 -8px 24px -8px rgb(31 35 40 / .18);
     padding: 12px 56px 16px 14px;
   }
   .sheet button {
@@ -109,7 +117,7 @@
 
   /* 手機：面板變成貼齊上緣的一條，只留日期、摘要、一行圖例；其他收進「圖例說明與設定」 */
   @media (max-width: 599px) {
-    .panel { top: 0; left: 0; right: 0; width: auto; border-width: 0 0 1px; border-radius: 0 0 12px 12px; padding: 8px 10px 4px; }
+    .panel { top: 0; left: 0; right: 0; width: auto; border-radius: 0 0 12px 12px; padding: 8px 10px 4px; }
     .panel h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     .summary { margin: 8px 0 6px; }
     .trip { grid-template-columns: 1fr 1fr 1fr; margin-top: 6px; }
@@ -196,9 +204,10 @@
 
   const map = L.map('map', { zoomControl: false, zoomSnap: 0.25 });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
-    attribution: '&copy; OpenStreetMap contributors',
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd',
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
   }).addTo(map);
 
   // 「今天」用打開網頁時的台灣日期算；假資料沒有真的日期，用它的第一天當今天
