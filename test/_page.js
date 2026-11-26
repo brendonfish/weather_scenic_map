@@ -13,7 +13,8 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // drive：{ index, times } 假的車程檔（沒給就當作 drive/ 還沒產出）；storage：瀏覽器裡已經記住的東西
 export const tick = () => new Promise((r) => setTimeout(r, 0));
 
-export async function runPage(data, { narrow = false, drive = null, storage = {} } = {}) {
+// geo：假的 navigator.geolocation.getCurrentPosition（沒給就當瀏覽器不支援定位）
+export async function runPage(data, { narrow = false, drive = null, storage = {}, geo = null } = {}) {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const els = {};
   const el = () => ({
@@ -53,6 +54,7 @@ export async function runPage(data, { narrow = false, drive = null, storage = {}
       FORECAST_DATA: data, matchMedia: () => ({ matches: narrow, addEventListener() {} }),
       DRIVE_INDEX: drive ? drive.index : undefined,
       localStorage: { getItem: (k) => storage[k] ?? null, setItem(k, v) { storage[k] = String(v); } },
+      navigator: geo ? { geolocation: { getCurrentPosition: geo } } : {},
     },
     document: {
       getElementById: (id) => (els[id] ??= el()),

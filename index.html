@@ -57,7 +57,7 @@
   }
   .days button:first-child { border-left: 0; }
   .days button[aria-pressed="true"] { background: var(--ink); color: #fff; }
-  .days button:focus-visible, .more summary:focus-visible, .sheet button:focus-visible, .trip select:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
+  .days button:focus-visible, .more summary:focus-visible, .sheet button:focus-visible, .trip select:focus-visible, .trip button:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
   /* 出發地和車程：桌機兩列（有標籤），手機擠成一列（標籤收掉，選單第一格自己會講） */
   .trip { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px; align-items: center; margin-top: 8px; }
   .trip .lab { color: var(--ink-2); font-size: 13px; }
@@ -66,7 +66,11 @@
     background: var(--bg); color: var(--ink); font: inherit;
   }
   .trip select:disabled { color: var(--line); border-color: var(--hair); }
-  .trip #driveLimit { grid-column: 2 / 4; }
+  .trip #useLocation {
+    min-height: 44px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--ink); font: inherit; cursor: pointer;
+  }
+  .trip #useLocation:disabled { color: var(--ink-2); cursor: progress; }
   .summary { margin: 10px 0 8px; font-weight: 600; }
   .notice { margin: 0 0 8px; padding: 8px 10px; border: 1px solid var(--ink); border-radius: 6px; background: var(--bg-2); }
   .legend { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; font-size: 13px; color: var(--ink-2); }
@@ -126,9 +130,9 @@
     .summary { margin: 8px 0 6px; }
     .trip { grid-template-columns: 1fr 1fr 1fr; margin-top: 6px; }
     .trip .lab { display: none; }
-    .trip #driveLimit { grid-column: auto; }
+    .trip #useLocation { grid-column: 1 / -1; }
     /* 16px 以下 iPhone 點選單時會自動放大整個畫面 */
-    .trip select { font-size: 16px; padding: 0 4px; }
+    .trip select, .trip #useLocation { font-size: 16px; padding: 0 4px; }
   }
 </style>
 </head>
@@ -142,7 +146,9 @@
     <select id="originTown" aria-label="出發的鄉鎮市區" disabled></select>
     <span class="lab">車程</span>
     <select id="driveLimit" aria-label="車程上限" disabled></select>
+    <button type="button" id="useLocation" hidden>📍 用我的位置</button>
   </div>
+  <p class="note" id="locateNote" role="status" hidden></p>
   <p class="summary" id="summary" aria-live="polite"></p>
   <p class="note" id="driveNote" hidden></p>
   <p class="notice" id="notice" role="status" hidden></p>
@@ -387,6 +393,10 @@
     $('originTown').value = '';
     $('originTown').disabled = !c;
   }
+  function locateNote(text) {
+    $('locateNote').textContent = text;
+    $('locateNote').hidden = !text;
+  }
   let asking = 0; // 連續換出發地時，只認最後一次
   async function setOrigin(county, town) {
     const mine = ++asking;
@@ -411,10 +421,37 @@
     $('driveLimit').replaceChildren(option('', '車程不限'), ...DriveTime.LIMITS.map((m) => option(String(m), DriveTime.limitText(m))));
     fillTowns(null);
     $('originCounty').onchange = () => {
+      locateNote('');
       fillTowns(driveIndex.counties.find((c) => c.name === $('originCounty').value));
       setOrigin(null, null);
     };
-    $('originTown').onchange = () => setOrigin($('originCounty').value, $('originTown').value);
+    $('originTown').onchange = () => {
+      locateNote('');
+      setOrigin($('originCounty').value, $('originTown').value);
+    };
+    // 用我的位置：手機座標 → 最近的鄉鎮 → 跟自己選一樣走 setOrigin。
+    // 座標只在這裡用來找鄉鎮，不存、不傳出去；記住的只有鄉鎮。
+    const geo = window.navigator && window.navigator.geolocation;
+    $('useLocation').hidden = !geo;
+    $('useLocation').onclick = () => {
+      $('useLocation').disabled = true;
+      locateNote('正在取得你的位置…');
+      geo.getCurrentPosition((pos) => {
+        $('useLocation').disabled = false;
+        const near = DriveTime.nearestTown(driveIndex, pos.coords.latitude, pos.coords.longitude);
+        if (!near) return locateNote('你的位置離台灣的鄉鎮太遠，請手動選出發地。');
+        $('originCounty').value = near.county;
+        fillTowns(driveIndex.counties.find((c) => c.name === near.county));
+        $('originTown').value = near.town;
+        setOrigin(near.county, near.town);
+        locateNote(`用你的位置：最近的鄉鎮是${near.county}${near.town}，車程從這個鄉鎮算。`);
+      }, (err) => {
+        $('useLocation').disabled = false;
+        locateNote(err && err.code === 1
+          ? '沒有拿到位置權限。要用的話請在瀏覽器設定允許這個網站取得位置，或手動選出發地。'
+          : '暫時拿不到你的位置，請稍後再試，或手動選出發地。');
+      }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 });
+    };
     $('driveLimit').onchange = () => {
       driveLimit = $('driveLimit').value ? Number($('driveLimit').value) : null;
       saveDrive();

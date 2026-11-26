@@ -20,7 +20,7 @@
 網頁可以選出發地（鄉鎮）和車程上限，只看車程內的景點。車程是事先算好放在 `drive/` 的，網頁執行時不連任何路線服務。
 
 - `data/towns.csv`：全台鄉鎮的名稱和座標（氣象署鄉鎮預報的預報點），當作出發地。鄉鎮改制才需要重抓：`CWA_API_KEY=授權碼 node scripts/fetch-towns.js`。
-- `drive/index.js`、`drive/cNN.js`：每個鄉鎮到 190 個景點的開車分鐘數，一個縣市一個檔。要 commit。不要手改。
+- `drive/index.js`、`drive/cNN.js`：每個鄉鎮到 190 個景點的開車分鐘數，一個縣市一個檔；`index.js` 另外有每個鄉鎮的座標（網頁「用我的位置」找最近的鄉鎮用）。要 commit。不要手改。
 - 景點清單或 `data/towns.csv` 變了才要重算。每日排程不重算。重算步驟（在本機，要有 Docker）：
 
   ```bash
