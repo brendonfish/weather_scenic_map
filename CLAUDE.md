@@ -7,7 +7,7 @@
 | 做什麼 | 指令 | 說明 |
 | --- | --- | --- |
 | 測試 | `node --test` | 只用 `data/` 和 `fixtures/` 裡的檔案，不連氣象署。要全過。 |
-| 部署 | Ray 執行 `git push origin main`（工廠不 push） | push 之後 GitHub Pages 自動更新網頁；GitHub Actions 每天跑 3 次 build 自動更新預報。repo：`brendonfish/weather_scenic_map`，網址：https://brendonfish.github.io/weather_scenic_map/ |
+| 部署 | Ray 執行 `git push origin main`（工廠不 push） | push 之後 GitHub Pages 自動更新網頁；GitHub Actions 每天跑 3 次 build 自動更新預報。repo：`brendonfish/weather_scenic_map`，網址：https://brendonfish.github.io/weather_scenic_map/ 。另有 https://weatherway.good-picks.com （AWS VM，每小時從 repo 和 Pages 同步，設定在 `deploy/vm/`，見 README） |
 | 驗證 | `node --test && node scripts/build-data.js --fixture && node -e "const d=require('./public/forecast.json');if(d.spots.length!==190)process.exit(1)"` | 測試全過；用假預報產出的資料剛好 190 個景點。部署後再打開公開網址的 `public/forecast.json`，確認有 190 個景點、`generatedAt` 在 12 小時內。 |
 
 ## 資料

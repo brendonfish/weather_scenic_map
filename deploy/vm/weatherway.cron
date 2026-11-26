@@ -1,0 +1,2 @@
+# VM 上放在 /etc/cron.d/weatherway：每小時 10 分同步一次網站
+10 * * * * ubuntu /usr/local/bin/weatherway-sync >> /opt/weatherway/sync.log 2>&1

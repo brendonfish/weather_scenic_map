@@ -1,0 +1,9 @@
+# 旅遊天氣景點地圖，VM 上放在 /etc/caddy/Caddyfile。Caddy 自己申請和續約 HTTPS 憑證。
+# 網站檔案由 /usr/local/bin/weatherway-sync（deploy/vm/sync.sh）每小時更新。
+weatherway.good-picks.com {
+	root * /var/www/weatherway
+	file_server
+	encode gzip
+	@forecast path /public/*
+	header @forecast Cache-Control "public, max-age=300"
+}

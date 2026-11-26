@@ -41,6 +41,30 @@ Settings → Pages → Build and deployment：Source 選「**GitHub Actions**」
 repo 頁面 → Actions → 左邊選「更新天氣預報」→ 右邊「Run workflow」→ 再按一次綠色的「Run workflow」。
 跑完（build 和 deploy 兩個都是綠色勾勾），打開網址看「預報更新於」有沒有變成剛剛的時間。
 
+### 自己的網域：weatherway.good-picks.com
+
+同一個網站也放在 AWS 的 VM（3.90.174.187，Ubuntu，GoDaddy 的 DNS 指過去）。設定檔都在 `deploy/vm/`：
+
+- `sync.sh`：VM 上裝成 `/usr/local/bin/weatherway-sync`。程式從 GitHub repo 的 main 拉，預報從上面的 GitHub Pages 抓，剛好 190 個景點才換上去。VM 不放授權碼。
+- `weatherway.cron`：放到 `/etc/cron.d/weatherway`，每小時 10 分跑一次 `sync.sh`。push 之後最多 1 小時 VM 就會跟上。
+- `Caddyfile`：放到 `/etc/caddy/Caddyfile`。Caddy 自己申請和續約 HTTPS 憑證。
+
+換一台新 VM 時先做一次（AWS 安全群組要開 80、443；DNS 先指好，Caddy 才拿得到憑證）：
+
+```bash
+ssh -i ~/Documents/Docs/AWS/aws_key-1.pem ubuntu@新的IP 'sudo apt-get update && sudo apt-get install -y caddy git curl python3 && sudo mkdir -p /opt/weatherway /var/www && sudo chown ubuntu:ubuntu /opt/weatherway /var/www'
+```
+
+（`/var/www/weatherway` 由 `sync.sh` 建成連結，不要先建成資料夾。）接著跑下面那段指令裝設定檔。
+
+改了 `deploy/vm/` 的檔案，也要用這段複製到 VM 上（VM 不會自動更新這三個檔）：
+
+```bash
+K=~/Documents/Docs/AWS/aws_key-1.pem; H=ubuntu@3.90.174.187
+scp -i $K deploy/vm/sync.sh deploy/vm/Caddyfile deploy/vm/weatherway.cron $H:/tmp/
+ssh -i $K $H 'sudo install -m 755 /tmp/sync.sh /usr/local/bin/weatherway-sync && sudo install -m 644 /tmp/weatherway.cron /etc/cron.d/weatherway && sudo install -m 644 /tmp/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy && weatherway-sync'
+```
+
 ### 本機試跑
 
 `bash scripts/build-site.sh --fixture` 會用假預報產出 `_site/`（已經在 `.gitignore` 裡），可以用瀏覽器打開 `_site/index.html` 看。
