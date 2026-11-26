@@ -5,6 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import zlib from 'node:zlib';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -52,18 +53,23 @@ function withFakeWorld(fn) {
   }
 }
 
-test('V-1 sync.sh：VM 上的網站檔案跟 GitHub Pages 上的一模一樣', () => {
+test('V-1 sync.sh：VM 上的網站檔案跟 GitHub Pages 上的一模一樣，另外每個檔都有先壓好的 .gz', () => {
   withFakeWorld(({ pages, vmEnv, sync }) => {
     const r = sync();
     assert.equal(r.status, 0, r.stdout + r.stderr);
-    assert.deepEqual(listFiles(vmEnv.LIVE), listFiles(pages));
-    for (const f of listFiles(pages)) {
-      assert.ok(fs.readFileSync(path.join(vmEnv.LIVE, f)).equals(fs.readFileSync(path.join(pages, f))), f);
+    const pageFiles = listFiles(pages);
+    assert.deepEqual(listFiles(vmEnv.LIVE), [...pageFiles, ...pageFiles.map((f) => f + '.gz')].sort());
+    for (const f of pageFiles) {
+      const want = fs.readFileSync(path.join(pages, f));
+      assert.ok(fs.readFileSync(path.join(vmEnv.LIVE, f)).equals(want), f);
+      assert.ok(zlib.gunzipSync(fs.readFileSync(path.join(vmEnv.LIVE, f + '.gz'))).equals(want), f + '.gz');
     }
-    // 再跑一次也沒問題（每小時都會跑）
+    const mtimes = () => Object.fromEntries(listFiles(vmEnv.LIVE).map((f) => [f, fs.statSync(path.join(vmEnv.LIVE, f)).mtimeMs]));
+    const first = mtimes();
+    // 再跑一次也沒問題（每小時都會跑）；內容沒變的檔，時間也不變，瀏覽器問「有沒有變」才會拿到 304
     const r2 = sync();
     assert.equal(r2.status, 0, r2.stdout + r2.stderr);
-    assert.deepEqual(listFiles(vmEnv.LIVE), listFiles(pages));
+    assert.deepEqual(mtimes(), first);
   });
 });
 
@@ -105,4 +111,10 @@ test('V-3 VM 的設定：不碰授權碼；Caddy 和 cron 指到同一個網站�
   assert.match(caddy, new RegExp(`root \\* ${live}$`, 'm'));
   const cron = fs.readFileSync(path.join(root, 'deploy', 'vm', 'weatherway.cron'), 'utf8');
   assert.match(cron, /^10 \* \* \* \* ubuntu \/usr\/local\/bin\/weatherway-sync /m);
+});
+
+test('V-5 Caddy：送先壓好的 .gz（不用每次重壓），所有檔案讓瀏覽器快取 5 分鐘', () => {
+  const caddy = fs.readFileSync(path.join(root, 'deploy', 'vm', 'Caddyfile'), 'utf8');
+  assert.match(caddy, /file_server \{\s*precompressed gzip\s*\}/);
+  assert.match(caddy, /^\s*header Cache-Control "public, max-age=300"$/m);
 });

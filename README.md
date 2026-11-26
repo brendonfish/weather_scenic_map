@@ -47,7 +47,7 @@ repo 頁面 → Actions → 左邊選「更新天氣預報」→ 右邊「Run wo
 
 - `sync.sh`：VM 上裝成 `/usr/local/bin/weatherway-sync`。程式從 GitHub repo 的 main 拉，預報從上面的 GitHub Pages 抓，剛好 190 個景點才換上去。VM 不放授權碼。
 - `weatherway.cron`：放到 `/etc/cron.d/weatherway`，每小時 10 分跑一次 `sync.sh`。push 之後最多 1 小時 VM 就會跟上。
-- `Caddyfile`：放到 `/etc/caddy/Caddyfile`。Caddy 自己申請和續約 HTTPS 憑證。
+- `Caddyfile`：放到 `/etc/caddy/Caddyfile`。Caddy 自己申請和續約 HTTPS 憑證。它直接送 `sync.sh` 先壓好的 `.gz`（不用每個請求重壓），並讓瀏覽器快取 5 分鐘，過了再問有沒有變（沒變只回 304）。
 
 換一台新 VM 時先做一次（AWS 安全群組要開 80、443；DNS 先指好，Caddy 才拿得到憑證）：
 

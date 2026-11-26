@@ -7,6 +7,8 @@
 # 約定：
 #   - 放哪些檔要跟 scripts/build-site.sh 一樣（test/vm-deploy.test.js 會比對）。
 #   - Pages 上的預報在 public/forecast.json、public/forecast.js（build-site.sh 放的位置）。
+#   - 每個 .html、.js、.json 旁邊放一份先壓好的 .gz（Caddyfile 的 precompressed gzip 會直接送），
+#     檔案時間沿用原檔：內容沒變時間就不變，瀏覽器才拿得到 304。VM 重新 clone 時時間會變，只是多下載一次。
 #   - VM 要有 git、curl、python3；BASE、LIVE 的上一層要讓跑的人能寫；LIVE 第一次不能是實體資料夾。
 # 環境變數可以換掉來源和目錄，只給測試用（cron 的 log 路徑寫死在 /opt/weatherway）。
 set -euo pipefail
@@ -28,11 +30,12 @@ mkdir -p "$BASE/releases"
 NEW=$(mktemp -d "$BASE/releases/$(date -u +%Y%m%dT%H%M%S)-XXXX")
 chmod 755 "$NEW"
 mkdir -p "$NEW/lib" "$NEW/public"
-cp "$REPO/index.html" "$NEW/"
-cp "$REPO/lib/day-labels.js" "$REPO/lib/spot-view.js" "$REPO/lib/drive-time.js" "$NEW/lib/"
-cp -R "$REPO/drive" "$NEW/drive"
-curl -fsS --max-time 60 -o "$NEW/public/forecast.json" "$PAGES/public/forecast.json"
-curl -fsS --max-time 60 -o "$NEW/public/forecast.js" "$PAGES/public/forecast.js"
+# 保留檔案時間（cp -p、curl -R）：內容沒變的檔時間就不變，瀏覽器問「有沒有變」時 Caddy 才回 304
+cp -p "$REPO/index.html" "$NEW/"
+cp -p "$REPO/lib/day-labels.js" "$REPO/lib/spot-view.js" "$REPO/lib/drive-time.js" "$NEW/lib/"
+cp -Rp "$REPO/drive" "$NEW/drive"
+curl -fsSR --max-time 60 -o "$NEW/public/forecast.json" "$PAGES/public/forecast.json"
+curl -fsSR --max-time 60 -o "$NEW/public/forecast.js" "$PAGES/public/forecast.js"
 
 # 防呆：預報的景點數要跟 repo 的景點清單一樣多，不然丟掉這一版
 if ! python3 - "$NEW/public/forecast.json" "$REPO/data/spots_2025_top10.csv" <<'PY'
@@ -46,6 +49,9 @@ then
   rm -rf "$NEW"
   exit 1
 fi
+
+# 先壓好 .gz，Caddy 直接送，不用每個請求重壓（省 CPU）。gzip 會沿用原檔的時間。
+find "$NEW" -type f \( -name '*.html' -o -name '*.js' -o -name '*.json' \) -exec gzip -k -9 -n {} +
 
 ln -sfn "$NEW" "$LIVE"
 # 只留最近 5 版
