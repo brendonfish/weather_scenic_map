@@ -124,6 +124,10 @@
   .detail .tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
   .detail .tags span { font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--bg-2); color: var(--ink-2); }
   .detail .site { color: var(--ink); font-size: 13px; }
+  /* 座標疊在一起的景點：列出名單，點名字打開 */
+  .picklist button { display: block; width: 100%; min-height: 44px; margin-top: 6px; padding: 0 10px; text-align: left;
+    border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; cursor: pointer; }
+  .picklist button:hover { background: var(--bg-2); }
   .detail .verdict { display: flex; align-items: center; margin: 2px 0; }
   .detail .when, .detail .meta { color: var(--ink-2); font-size: 13px; }
   .detail .slots { display: flex; gap: 6px; margin: 8px 0; text-align: center; }
@@ -306,7 +310,7 @@
     el.src = 'public/attraction-details.js';
     const done = () => {
       detailsState = 'done';
-      if (selected && window.ATTRACTION_DETAILS) showDetail(); // 資料到了，把照片、描述補上
+      if (selected && window.ATTRACTION_DETAILS) refreshDetail(); // 資料到了，只把照片、描述補上，不移動地圖
     };
     el.onload = done;
     el.onerror = done;
@@ -377,14 +381,12 @@
   }
 
   // 手機用底部面板（不會被上面的面板蓋住），桌機用地圖的資訊框
-  function showDetail() {
-    if (!selected) return;
-    loadDetails();
-    const html = detailHtml(selected, dayOf(selected));
-    const at = [selected.lat, selected.lng];
+  let popup = null;
+  function openPanel(html, at) {
     reopening = true;
     if (narrow()) {
       map.closePopup();
+      popup = null;
       $('sheetBody').innerHTML = html;
       $('sheet').hidden = false;
       const h = $('sheet').offsetHeight;
@@ -392,11 +394,51 @@
       map.panInside(at, { paddingTopLeft: [24, $('days').parentNode.offsetHeight + 24], paddingBottomRight: [24, h + 24] });
     } else {
       closeSheet();
-      L.popup({ maxWidth: 300, autoPanPaddingTopLeft: [$('days').parentNode.offsetWidth + 24, 16] })
+      popup = L.popup({ maxWidth: 300, autoPanPaddingTopLeft: [$('days').parentNode.offsetWidth + 24, 16] })
         .setLatLng(at).setContent(html).openOn(map);
     }
     reopening = false;
   }
+
+  function showDetail() {
+    if (!selected) return;
+    loadDetails();
+    openPanel(detailHtml(selected, dayOf(selected)), [selected.lat, selected.lng]);
+  }
+
+  // 詳細資料晚到：只換內容，不重新打開、不移動地圖（使用者可能已經把地圖拖走）
+  function refreshDetail() {
+    const html = detailHtml(selected, dayOf(selected));
+    if (narrow()) {
+      if ($('sheet').hidden) return;
+      $('sheetBody').innerHTML = html;
+      document.documentElement.style.setProperty('--sheet-h', $('sheet').offsetHeight + 'px');
+    } else if (popup && popup.isOpen()) {
+      const autoPan = popup.options.autoPan;
+      popup.options.autoPan = false;
+      popup.setContent(html);
+      popup.options.autoPan = autoPan;
+    }
+  }
+
+  // 座標疊在一起、拉到最近也分不開的景點：列出名單，點名字打開那個景點
+  function showPickList(members) {
+    selected = null;
+    render();
+    const html = `<div class="detail picklist"><div class="name">這裡有 ${members.length} 個景點</div>` +
+      members.map((m) => `<button type="button" data-pick="${esc(m.id)}">${esc(m.name)}</button>`).join('') + '</div>';
+    openPanel(html, [members[0].lat, members[0].lng]);
+  }
+  // 資訊框會擋住點擊往外傳，所以在捕獲階段接
+  document.addEventListener('click', (e) => {
+    const b = e.target && e.target.closest ? e.target.closest('[data-pick]') : null;
+    if (!b) return;
+    const s = data.spots.find((x) => x.id === b.dataset.pick);
+    if (!s) return;
+    selected = s;
+    render();
+    showDetail();
+  }, true);
 
   function unselect() {
     if (reopening || !selected) return;
@@ -406,10 +448,17 @@
 
   // 合併的點：點了拉近到這幾個景點的範圍；已經拉到最近還疊在一起，就不再合併（見 place 的 clusterPx）
   function zoomInto(members) {
+    // 已經拉到最近（不再合併的級數）還疊在一起：列名單
+    if (map.getZoom() >= map.getMaxZoom() - 1) return showPickList(members);
     const lats = members.map((m) => m.lat);
     const lngs = members.map((m) => m.lng);
-    map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]],
-      { padding: [48, 48], maxZoom: map.getMaxZoom() });
+    // 跟一開始對準全台一樣避開左上的面板，拉近後的景點才不會被面板蓋住
+    const panel = $('days').parentNode;
+    map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]], {
+      paddingTopLeft: narrow() ? [40, panel.offsetHeight + 40] : [panel.offsetWidth + 40, 40],
+      paddingBottomRight: [40, 40],
+      maxZoom: map.getMaxZoom(),
+    });
   }
 
   function render() {
@@ -432,11 +481,11 @@
       closeSheet();
       map.closePopup();
     }
-    // 只畫畫面裡的；太近的合併，最多 CFG.cap 個點。拉到最近還疊在一起就不再合併。
+    // 只畫畫面裡的；太近的合併，最多 CFG.cap 個點。拉到最近只合併座標疊在一起的（1 像素內），點了列名單。
     const bounds = map.getBounds();
     const inView = visible.filter((s) => bounds.contains([s.lat, s.lng]));
     const toPoint = (s) => map.latLngToContainerPoint([s.lat, s.lng]);
-    const placed = MapLayers.place(inView, toPoint, { cap: CFG.cap, clusterPx: zoom >= map.getMaxZoom() - 1 ? 0 : CFG.clusterPx });
+    const placed = MapLayers.place(inView, toPoint, { cap: CFG.cap, clusterPx: zoom >= map.getMaxZoom() - 1 ? 1 : CFG.clusterPx });
     // 選到的景點一定畫出來：被畫面上限擠掉就補上；在合併的點裡就拆出來單獨畫，其他的照樣合併
     if (selected && inView.includes(selected) && !placed.groups.some((g) => g.members.includes(selected))) {
       placed.groups.push({ lead: selected, members: [selected] });
@@ -459,7 +508,7 @@
       if (g.members.length > 1) {
         const n = g.members.length;
         const icon = L.divIcon({ className: 'spot', html: `<div class="cluster c-${color}" data-color="${color}">${n}</div>`, iconSize: [40, 40], iconAnchor: [20, 20] });
-        L.marker([s.lat, s.lng], { icon, title: `${n} 個景點：點了拉近看`, zIndexOffset: 500 + Z_ORDER[color] })
+        L.marker([s.lat, s.lng], { icon, title: `${n} 個景點：${zoom >= map.getMaxZoom() - 1 ? '點了看名單' : '點了拉近看'}`, zIndexOffset: 500 + Z_ORDER[color] })
           .on('click', () => zoomInto(g.members))
           .addTo(layer);
         continue;

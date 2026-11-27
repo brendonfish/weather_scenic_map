@@ -40,19 +40,20 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
   const el = () => ({
     textContent: '', innerHTML: '', value: '', checked: false, hidden: false, disabled: false, open: false, children: [], onclick: null, onchange: null,
     offsetHeight: 0, offsetWidth: 0, parentNode: { offsetHeight: 0, offsetWidth: 0 },
-    attrs: {},
+    attrs: {}, listeners: {},
     setAttribute(k, v) { this.attrs[k] = v; },
+    addEventListener(ev, fn) { this.listeners[ev] = fn; },
     appendChild(c) { this.children.push(c); },
     replaceChildren(...c) { this.children = c; },
   });
-  const rec = { markers: [], calls: [], popupHtml: null, mapOn: {} };
+  const rec = { markers: [], calls: [], popupHtml: null, mapOn: {}, docOn: {} };
   // 測試可以改 rec.map.zoom 再呼叫 rec.mapOn.moveend()，模擬使用者縮放地圖
   const map = {
     zoom,
     on(ev, fn) { rec.mapOn[ev] = fn; return map; },
     closePopup() { rec.calls.push('closePopup'); },
     panInside() { rec.calls.push('panInside'); },
-    fitBounds(b) { rec.calls.push('fitBounds'); rec.lastFit = b; map.loaded = true; },
+    fitBounds(b, o) { rec.calls.push('fitBounds'); rec.lastFit = b; rec.lastFitOpts = o; map.loaded = true; },
     setView(c, z) { rec.calls.push('setView'); map.zoom = z; map.loaded = true; },
     getZoom: () => map.zoom,
     getMaxZoom: () => 18,
@@ -74,7 +75,7 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
       return m;
     },
     popup() {
-      const p = { setLatLng: () => p, setContent(h) { rec.popupHtml = h; return p; }, openOn() { rec.calls.push('openPopup'); return p; } };
+      const p = { options: {}, setLatLng: () => p, setContent(h) { rec.popupHtml = h; rec.popupAutoPan = p.options.autoPan; return p; }, openOn() { rec.calls.push('openPopup'); return p; }, isOpen: () => true };
       return p;
     },
   };
@@ -86,6 +87,8 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
       navigator: geo ? { geolocation: { getCurrentPosition: geo } } : {},
     },
     document: {
+      // 網頁在 document 上用捕獲階段接點擊（資訊框裡的按鈕）；測試呼叫 rec.docOn.click(事件)
+      addEventListener(ev, fn) { rec.docOn[ev] = fn; },
       getElementById: (id) => (els[id] ??= el()),
       createElement: () => el(),
       documentElement: { style: { setProperty() {} } },

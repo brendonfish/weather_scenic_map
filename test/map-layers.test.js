@@ -342,3 +342,63 @@ test('L-22 網頁的九類和天氣適配，跟 build（lib/attractions.js）產
   assert.deepEqual([...ML.TYPES], Object.keys(stats.types));
   assert.deepEqual([...ML.FITS], Object.keys(stats.weatherFit));
 });
+
+// ---- 第二輪檢查找到的問題（2026-11-28），Ray 說修完再合併 ----
+
+test('L-23 座標完全一樣的景點：拉到最近還疊在一起，點那個點列出名單，點名字打開那個景點', async () => {
+  const attractions = [
+    place({ id: 'H1', name: '慈湖', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
+    place({ id: 'H2', name: '慈湖陵寢', layer: 4, lat: 24.84037, lng: 121.29427 }),
+    place({ id: 'H3', name: '大溪慈湖步道', layer: 4, lat: 24.84037, lng: 121.29427 }),
+  ];
+  const { els, rec } = await runPage(forecast, { attractions, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 17.5 });
+  assert.equal(rec.markers.length, 1, '疊在一起的三個畫成一個點');
+  const m = rec.markers[0];
+  assert.match(m.opts.icon.html, />3</);
+  assert.match(m.opts.title, /3 個景點：點了看名單/);
+  rec.calls.length = 0;
+  m.handlers.click();
+  assert.ok(!rec.calls.includes('fitBounds'), '已經拉到最近，不再拉近');
+  for (const n of ['慈湖', '慈湖陵寢', '大溪慈湖步道']) assert.match(rec.popupHtml, new RegExp(`data-pick="[^"]+">${n}<`));
+  // 點名單裡的「慈湖陵寢」
+  rec.docOn.click({ target: { closest: (sel) => (sel === '[data-pick]' ? { dataset: { pick: 'H2' } } : null) } });
+  assert.match(rec.popupHtml, /<div class="name">慈湖陵寢/);
+});
+
+test('L-24 還沒拉到最近時，疊在一起的點照舊是點了拉近', async () => {
+  const attractions = [
+    place({ id: 'H1', name: '慈湖', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
+    place({ id: 'H2', name: '慈湖陵寢', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
+  ];
+  const { rec } = await runPage(forecast, { attractions, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 12 });
+  rec.markers[0].handlers.click();
+  assert.ok(rec.calls.includes('fitBounds'));
+});
+
+for (const narrow of [false, true]) {
+  test(`L-25 詳細資料晚到（${narrow ? '手機' : '桌機'}）：只換資訊框裡的內容，不重新打開、不移動地圖`, async () => {
+    const attractions = [place({ id: 'A1', name: '一層', layer: 1, lat: 25.04, lng: 121.50, setting: '戶外', visitors: 1 })];
+    const details = { A1: { image: null, excerpt: '晚到的描述', website: '' } };
+    const { els, rec } = await runPage(forecast, { attractions, details, preload: false, narrow });
+    rec.markers[0].handlers.click();
+    const opened = rec.calls.filter((c) => c === 'openPopup' || c === 'panInside').length;
+    for (let i = 0; i < 5; i++) await tick();
+    assert.equal(rec.calls.filter((c) => c === 'openPopup' || c === 'panInside').length, opened, rec.calls.join(','));
+    const html = narrow ? els.sheetBody.innerHTML : rec.popupHtml;
+    assert.match(html, /晚到的描述/);
+    if (!narrow) assert.equal(rec.popupAutoPan, false, '換內容時不自動移動地圖');
+  });
+}
+
+test('L-26 點合併的點拉近：避開左上的面板（跟一開始對準全台一樣）', async () => {
+  const attractions = [
+    place({ id: 'A', name: '甲', layer: 1, lat: 25.0, lng: 121.5, setting: '戶外', visitors: 1 }),
+    place({ id: 'B', name: '乙', layer: 1, lat: 25.0001, lng: 121.5001, setting: '戶外', visitors: 1 }),
+  ];
+  for (const narrow of [false, true]) {
+    const { rec } = await runPage(forecast, { attractions, mapConfig: { cap: 30, clusterPx: 40 }, zoom: 8, narrow });
+    rec.markers[0].handlers.click();
+    const o = rec.lastFitOpts || {};
+    assert.ok(Array.isArray(o.paddingTopLeft) && Array.isArray(o.paddingBottomRight), JSON.stringify(o));
+  }
+});
