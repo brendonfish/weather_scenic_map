@@ -46,6 +46,7 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
     replaceChildren(...c) { this.children = c; },
   });
   const rec = { markers: [], calls: [], popupHtml: null, mapOn: {} };
+  // 測試可以改 rec.map.zoom 再呼叫 rec.mapOn.moveend()，模擬使用者縮放地圖
   const map = {
     zoom,
     on(ev, fn) { rec.mapOn[ev] = fn; return map; },
@@ -60,6 +61,7 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
     getBounds() { if (!map.loaded) throw new Error('Set map center and zoom first.'); return { contains: () => true }; },
     latLngToContainerPoint([lat, lng]) { const k = 256 * 2 ** map.zoom / 360; return { x: lng * k, y: -lat * k }; },
   };
+  rec.map = map;
   const layer = { addTo: () => layer, clearLayers() { rec.markers = []; } };
   const L = {
     map: (id, opts) => { rec.mapOpts = opts; map.loaded = Boolean(opts && opts.center && opts.zoom !== undefined); return map; },
@@ -91,7 +93,9 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
       head: { appendChild(s) {
         rec.scripts = [...(rec.scripts || []), s.src];
         if (s.src === 'public/attraction-details.js') {
-          ctx.window.ATTRACTION_DETAILS = details;
+          // details 給 'fail'：檔案載入失敗（onerror）；給 null：檔案載入了但沒有定義資料（例如內容壞掉）
+          if (details === 'fail') { Promise.resolve().then(() => s.onerror()); return; }
+          if (details) ctx.window.ATTRACTION_DETAILS = details;
           Promise.resolve().then(() => s.onload());
           return;
         }

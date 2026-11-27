@@ -269,3 +269,76 @@ test('L-17 build：景點檔拆成畫點用的精簡檔（不到 2 MB）和點�
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+// ---- 第一輪檢查找到的問題（2026-11-28） ----
+
+for (const [label, details] of [['載入失敗', 'fail'], ['載入了但沒有資料', null]]) {
+  test(`L-18 詳細資料${label}：資訊框照樣打開（天氣照常），不重試、不卡住，只是沒有照片`, async () => {
+    const attractions = [place({ id: 'A1', name: '一層', layer: 1, lat: 25.04, lng: 121.50, setting: '戶外', visitors: 1 })];
+    const { rec } = await runPage(forecast, { attractions, details, preload: false });
+    rec.markers[0].handlers.click();
+    for (let i = 0; i < 5; i++) await tick();
+    assert.match(rec.popupHtml || '', /不太會下雨/);
+    assert.equal((rec.scripts || []).filter((x) => x === 'public/attraction-details.js').length, 1);
+    // 再點一次也不會一直重試
+    rec.markers[0].handlers.click();
+    for (let i = 0; i < 5; i++) await tick();
+    assert.ok((rec.scripts || []).filter((x) => x === 'public/attraction-details.js').length <= 2);
+  });
+}
+
+test('L-19 官方網站只接受 http、https 開頭的網址（擋 javascript: 之類）', async () => {
+  const attractions = [place({ id: 'A1', name: '一層', layer: 1, lat: 25.04, lng: 121.50, setting: '戶外', visitors: 1 })];
+  for (const bad of ['javascript:alert(1)', ' JavaScript:alert(1)', 'data:text/html,x']) {
+    const { rec } = await runPage(forecast, { attractions, details: { A1: { image: null, excerpt: '', website: bad } } });
+    rec.markers[0].handlers.click();
+    assert.doesNotMatch(rec.popupHtml, /官方網站/, bad);
+  }
+  const { rec } = await runPage(forecast, { attractions, details: { A1: { image: null, excerpt: '', website: 'http://example.test/' } } });
+  rec.markers[0].handlers.click();
+  assert.match(rec.popupHtml, /href="http:\/\/example\.test\/"[^>]*>官方網站/);
+});
+
+test('L-20 選到的景點在合併的點裡：它自己單獨畫，其他景點照樣留在合併的點（數字少 1）', async () => {
+  const attractions = [
+    place({ id: 'A', name: '甲', layer: 1, lat: 25.0, lng: 121.5, setting: '戶外', visitors: 1, richness: 6 }),
+    place({ id: 'B', name: '乙', layer: 1, lat: 25.0001, lng: 121.5001, setting: '戶外', visitors: 1, richness: 1 }),
+    place({ id: 'C', name: '丙', layer: 1, lat: 25.0002, lng: 121.5002, setting: '戶外', visitors: 1, richness: 0 }),
+  ];
+  // 拉到最近（不合併），點乙，再縮小到會合併的級數
+  const { els, rec } = await runPage(forecast, { attractions, mapConfig: { cap: 30, clusterPx: 40 }, zoom: 17.5 });
+  assert.equal(rec.markers.length, 3);
+  rec.markers.find((m) => m.opts.title.startsWith('乙')).handlers.click();
+  rec.map.zoom = 8;
+  rec.mapOn.moveend();
+  const titles = rec.markers.map((m) => m.opts.title);
+  assert.equal(rec.markers.length, 2, titles.join('、'));
+  assert.ok(titles.some((t) => t.startsWith('乙')), '選到的乙單獨畫');
+  const cluster = rec.markers.find((m) => /cluster/.test(m.opts.icon.html));
+  assert.match(cluster.opts.icon.html, />2</);
+  assert.match(els.info.textContent, /顯示 3 \/ 3 個景點/);
+});
+
+test('L-21 選到的景點被畫面上限擠掉時：還是畫出來（資訊框開著，地圖上就要有那個點）', async () => {
+  const attractions = [
+    place({ id: 'TOP', name: '熱門', layer: 1, lat: 22.0, lng: 120.0, setting: '戶外', visitors: 1 }),
+    place({ id: 'SEL', name: '選到的', layer: 2, lat: 25.0, lng: 121.5, types: ['自然山林'] }),
+  ];
+  const { els, rec } = await runPage(forecast, { attractions, mapConfig: { cap: 1, clusterPx: 0 }, zoom: 9 });
+  // 只看自然山林：熱門（古蹟文化）被篩掉，畫面上只有選到的
+  els.typeFilters.children.forEach((label) => { const box = label.children[0]; box.checked = box.value === '自然山林'; });
+  els.typeFilters.children[0].children[0].onchange();
+  rec.markers.find((m) => m.opts.title.startsWith('選到的')).handlers.click();
+  // 全部勾回來：熱門排名比較前面，上限 1 個
+  els.typeFilters.children.forEach((label) => { label.children[0].checked = true; });
+  els.typeFilters.children[0].children[0].onchange();
+  const titles = rec.markers.map((m) => m.opts.title);
+  assert.ok(titles.some((t) => t.startsWith('選到的')), titles.join('、'));
+});
+
+test('L-22 網頁的九類和天氣適配，跟 build（lib/attractions.js）產出的一模一樣', async () => {
+  const { buildAttractions } = await import('../lib/attractions.js');
+  const { stats } = buildAttractions({ attractions: [], visitors: [], top: [], config: { ratio: 0.25, min: 2, max: 10 } });
+  assert.deepEqual([...ML.TYPES], Object.keys(stats.types));
+  assert.deepEqual([...ML.FITS], Object.keys(stats.weatherFit));
+});

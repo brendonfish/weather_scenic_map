@@ -297,19 +297,20 @@
   });
 
   // 景點的照片、描述、網站在 public/attraction-details.js，第一次點開景點才載入（景點檔太大，拆開）
-  let detailsLoading = null;
+  // 只載一次：載不到（或檔案壞掉、沒有資料）就算了，資訊框照樣有天氣，只是沒有照片、描述
+  let detailsState = 'none'; // none → loading → done
   function loadDetails() {
-    if (window.ATTRACTION_DETAILS) return null;
-    if (!detailsLoading) {
-      detailsLoading = new Promise((resolve) => {
-        const el = document.createElement('script');
-        el.src = 'public/attraction-details.js';
-        el.onload = () => resolve();
-        el.onerror = () => { detailsLoading = null; resolve(); };
-        document.head.appendChild(el);
-      });
-    }
-    return detailsLoading;
+    if (window.ATTRACTION_DETAILS || detailsState !== 'none') return;
+    detailsState = 'loading';
+    const el = document.createElement('script');
+    el.src = 'public/attraction-details.js';
+    const done = () => {
+      detailsState = 'done';
+      if (selected && window.ATTRACTION_DETAILS) showDetail(); // 資料到了，把照片、描述補上
+    };
+    el.onload = done;
+    el.onerror = done;
+    document.head.appendChild(el);
   }
   const detailOf = (s) => (window.ATTRACTION_DETAILS && window.ATTRACTION_DETAILS[s.id]) || s;
 
@@ -321,6 +322,8 @@
   let driveFailed = false; // 選了出發地但車程檔讀不到
 
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  // 官方網站只接受 http、https（資料來自政府開放資料，不讓 javascript: 之類的網址變成連結）
+  const safeUrl = (u) => (/^https?:\/\//i.test(String(u ?? '').trim()) ? String(u).trim() : '');
   const fmtPop = (v) => (v === null || v === undefined ? '—' : v + '%');
   const hour = (t) => String(t).replace(/^0?(\d+):00$/, '$1'); // 09:00 → 9
   const dayOf = (s) => (s.forecast ? s.forecast[dayIndex] : null);
@@ -363,7 +366,8 @@
     const meta = [esc(s.county) + esc(s.town), s.setting ? esc(s.setting) : '',
       s.layer === 1 && s.visitors !== undefined ? `2025 遊客 ${Number(s.visitors).toLocaleString('zh-TW')} 人次` : ''].filter(Boolean);
     html += `<div class="meta">${meta.join(' · ')}</div>`;
-    if (more.website) html += `<a class="site" href="${esc(more.website)}" target="_blank" rel="noopener">官方網站</a>`;
+    const site = safeUrl(more.website);
+    if (site) html += `<a class="site" href="${esc(site)}" target="_blank" rel="noopener">官方網站</a>`;
     return html + `<a class="route" href="${esc(SpotView.routeUrl(s))}" target="_blank" rel="noopener">用 Google 地圖規劃路線</a></div>`;
   }
 
@@ -375,8 +379,7 @@
   // 手機用底部面板（不會被上面的面板蓋住），桌機用地圖的資訊框
   function showDetail() {
     if (!selected) return;
-    const waiting = loadDetails();
-    if (waiting) { waiting.then(() => showDetail()); return; }
+    loadDetails();
     const html = detailHtml(selected, dayOf(selected));
     const at = [selected.lat, selected.lng];
     reopening = true;
@@ -434,15 +437,26 @@
     const inView = visible.filter((s) => bounds.contains([s.lat, s.lng]));
     const toPoint = (s) => map.latLngToContainerPoint([s.lat, s.lng]);
     const placed = MapLayers.place(inView, toPoint, { cap: CFG.cap, clusterPx: zoom >= map.getMaxZoom() - 1 ? 0 : CFG.clusterPx });
-    // 選到的景點一定畫成單獨的點，不藏在合併的點裡
-    let drawn = 0;
+    // 選到的景點一定畫出來：被畫面上限擠掉就補上；在合併的點裡就拆出來單獨畫，其他的照樣合併
+    if (selected && inView.includes(selected) && !placed.groups.some((g) => g.members.includes(selected))) {
+      placed.groups.push({ lead: selected, members: [selected] });
+      placed.overflow--;
+    }
+    const groups = [];
     for (const g of placed.groups) {
-      const s = g.members.includes(selected) ? selected : g.lead;
-      const rest = g.members.filter((m) => m !== s);
+      if (g.members.length > 1 && g.members.includes(selected)) {
+        groups.push({ lead: selected, members: [selected] });
+        const rest = g.members.filter((m) => m !== selected);
+        groups.push({ lead: rest[0], members: rest });
+      } else groups.push(g);
+    }
+    let drawn = 0;
+    for (const g of groups) {
+      const s = g.lead;
       drawn += g.members.length;
       const day = dayOf(s);
       const color = SpotView.colorOf(s, dayIndex);
-      if (rest.length && s !== selected) {
+      if (g.members.length > 1) {
         const n = g.members.length;
         const icon = L.divIcon({ className: 'spot', html: `<div class="cluster c-${color}" data-color="${color}">${n}</div>`, iconSize: [40, 40], iconAnchor: [20, 20] });
         L.marker([s.lat, s.lng], { icon, title: `${n} 個景點：點了拉近看`, zIndexOffset: 500 + Z_ORDER[color] })
@@ -461,7 +475,6 @@
       L.marker([s.lat, s.lng], { icon, title: `${s.name}：${SpotView.verdict(day)}`, zIndexOffset: (s === selected ? 1000 : 0) + Z_ORDER[color] })
         .on('click', () => { selected = s; render(); showDetail(); })
         .addTo(layer);
-      if (rest.length) drawn -= rest.length; // 選到的景點拆出來了，其他的這次沒畫到
     }
     // 摘要只算熱門景點（第 1 層），拖動、縮放地圖時不會跟著跳
     const summary = SpotView.summarize(visible.filter((s) => s.layer === 1), dayIndex);
@@ -474,7 +487,7 @@
     $('driveNote').hidden = !driveNote;
     // 這天沒有灰色的景點，圖例就不用佔一格
     $('legendGray').hidden = summary.gray === 0;
-    const marks = placed.groups.length;
+    const marks = groups.length;
     $('info').textContent = `顯示 ${drawn} / ${candidates.length} 個景點` +
       (marks !== drawn ? `（畫面上 ${marks} 個點）` : '') + '。' +
       (placed.overflow ? `還有 ${placed.overflow} 個景點，拉近才看得到。` : '') +
