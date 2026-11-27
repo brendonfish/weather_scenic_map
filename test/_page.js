@@ -30,7 +30,9 @@ function toTownFormat(data) {
 }
 
 // geo：假的 navigator.geolocation.getCurrentPosition（沒給就當瀏覽器不支援定位）
-export async function runPage(input, { narrow = false, drive = null, storage = {}, geo = null, attractions: given } = {}) {
+// zoom：假地圖的縮放級數；mapConfig：網頁的 MAP_CONFIG（沒給就不設上限、不合併，舊的測試照舊數得到每一個點）
+// details：點開才載入的景點詳細資料（public/attraction-details.js）；preload 為 false 時等網頁自己載入
+export async function runPage(input, { narrow = false, drive = null, storage = {}, geo = null, attractions: given, zoom = 8, mapConfig = { cap: Infinity, clusterPx: 0 }, details = {}, preload = true } = {}) {
   const converted = given ? { forecast: input, attractions: given } : toTownFormat(input);
   const data = converted.forecast;
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -45,15 +47,22 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
   });
   const rec = { markers: [], calls: [], popupHtml: null, mapOn: {} };
   const map = {
+    zoom,
     on(ev, fn) { rec.mapOn[ev] = fn; return map; },
     closePopup() { rec.calls.push('closePopup'); },
     panInside() { rec.calls.push('panInside'); },
-    fitBounds() { rec.calls.push('fitBounds'); },
-    getZoom: () => 8,
+    fitBounds(b) { rec.calls.push('fitBounds'); rec.lastFit = b; map.loaded = true; },
+    setView(c, z) { rec.calls.push('setView'); map.zoom = z; map.loaded = true; },
+    getZoom: () => map.zoom,
+    getMaxZoom: () => 18,
+    // 假地圖：整個台灣都在畫面裡；投影用簡單的等距，1 度 ≈ 256 × 2^zoom / 360 像素
+    // 跟真的 Leaflet 一樣：還沒設定中心和縮放就問範圍會丟錯
+    getBounds() { if (!map.loaded) throw new Error('Set map center and zoom first.'); return { contains: () => true }; },
+    latLngToContainerPoint([lat, lng]) { const k = 256 * 2 ** map.zoom / 360; return { x: lng * k, y: -lat * k }; },
   };
   const layer = { addTo: () => layer, clearLayers() { rec.markers = []; } };
   const L = {
-    map: () => map,
+    map: (id, opts) => { rec.mapOpts = opts; map.loaded = Boolean(opts && opts.center && opts.zoom !== undefined); return map; },
     control: { zoom: () => ({ addTo() {} }) },
     tileLayer: () => ({ addTo() {} }),
     layerGroup: () => layer,
@@ -69,7 +78,7 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
   };
   const ctx = {
     window: {
-      FORECAST_DATA: data, ATTRACTIONS_DATA: converted.attractions, matchMedia: () => ({ matches: narrow, addEventListener() {} }),
+      FORECAST_DATA: data, ATTRACTIONS_DATA: converted.attractions, MAP_CONFIG: mapConfig, ATTRACTION_DETAILS: preload ? details : undefined, matchMedia: () => ({ matches: narrow, addEventListener() {} }),
       DRIVE_INDEX: drive ? drive.index : undefined,
       localStorage: { getItem: (k) => storage[k] ?? null, setItem(k, v) { storage[k] = String(v); } },
       navigator: geo ? { geolocation: { getCurrentPosition: geo } } : {},
@@ -80,6 +89,12 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
       documentElement: { style: { setProperty() {} } },
       // 網頁用 <script> 載入一個縣市的車程檔：這裡直接把假資料放進 window，再通知載入完成
       head: { appendChild(s) {
+        rec.scripts = [...(rec.scripts || []), s.src];
+        if (s.src === 'public/attraction-details.js') {
+          ctx.window.ATTRACTION_DETAILS = details;
+          Promise.resolve().then(() => s.onload());
+          return;
+        }
         const county = drive.index.counties.find((c) => s.src === 'drive/' + c.file);
         if (drive.times[county.name]) (ctx.window.DRIVE_TIMES ??= {})[county.name] = drive.times[county.name];
         // 假資料裡沒有這個縣市的車程：當成檔案載入失敗
@@ -90,7 +105,7 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
     fetch: async () => { throw new Error('不該用到 fetch'); },
     Date, Number, String,
   };
-  for (const f of ['day-labels.js', 'spot-view.js', 'drive-time.js', 'spot-join.js']) vm.runInNewContext(fs.readFileSync(path.join(root, 'lib', f), 'utf8'), ctx);
+  for (const f of ['day-labels.js', 'spot-view.js', 'drive-time.js', 'spot-join.js', 'map-layers.js']) vm.runInNewContext(fs.readFileSync(path.join(root, 'lib', f), 'utf8'), ctx);
   const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
   vm.runInNewContext(scripts[scripts.length - 1][1], ctx);
   await tick();

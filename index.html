@@ -48,6 +48,8 @@
     position: absolute; top: 10px; left: 10px; z-index: 1000; width: 300px; box-sizing: border-box;
     background: var(--surface); border-radius: 12px; box-shadow: var(--float);
     padding: 12px; font-size: 14px;
+    /* 篩選面板打開時內容比畫面高：面板自己捲動，不超出畫面 */
+    max-height: calc(100% - 20px); overflow-y: auto;
   }
   .panel h1 { font-size: 16px; margin: 0 0 10px; }
   .days { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
@@ -84,6 +86,15 @@
   .more label { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
   .more input { width: 18px; height: 18px; margin: 0; flex: none; }
   .note { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
+  /* 篩選面板：手機上預設收起來 */
+  .filters { margin-top: 6px; border-top: 1px solid var(--hair); }
+  .filters summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .filters summary:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
+  .filters .group { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
+  .filters .opts { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; }
+  .filters label { display: flex; align-items: center; gap: 6px; min-height: 36px; cursor: pointer; font-size: 13px; }
+  .filters input { width: 18px; height: 18px; margin: 0; flex: none; }
+  .filters .wide { grid-column: 1 / -1; }
 
   /* 標記：點擊範圍 32px，看起來是中間那顆小圓點 */
   .spot { display: flex; align-items: center; justify-content: center; }
@@ -96,10 +107,23 @@
   .c-green { background: var(--rain-green); } .c-yellow { background: var(--rain-yellow); } .c-red { background: var(--rain-red); }
   /* 沒資料是空心的，跟「有資料」一眼分開 */
   .c-gray { background: var(--bg); border-color: var(--line); }
+  /* 太近的景點合併成一個點：裡面寫有幾個，顏色跟代表的那個景點一樣 */
+  .cluster { min-width: 26px; height: 26px; padding: 0 5px; border: 1.5px solid var(--ink); border-radius: 13px; box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--ink);
+    box-shadow: 0 0 0 2px #fff, 0 1px 4px 1px rgb(31 35 40 / .35); }
+  .cluster.c-red { color: #fff; }
 
   /* 景點資訊：桌機放在地圖的資訊框裡，手機放在底部滑出的面板裡，內容一樣 */
   .detail { font-size: 14px; line-height: 1.5; min-width: 220px; }
   .detail .name { font-size: 16px; font-weight: 600; }
+  /* 縮圖：寬度固定，照片載不到就換成類型的圖示 */
+  .detail .thumb { display: block; width: 260px; max-width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px; background: var(--bg-2); }
+  .detail .thumb-icon { width: 260px; max-width: 100%; height: 72px; border-radius: 8px; margin-bottom: 8px; background: var(--bg-2);
+    display: flex; align-items: center; justify-content: center; font-size: 34px; }
+  .detail .excerpt { margin: 4px 0 6px; font-size: 13px; }
+  .detail .tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+  .detail .tags span { font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--bg-2); color: var(--ink-2); }
+  .detail .site { color: var(--ink); font-size: 13px; }
   .detail .verdict { display: flex; align-items: center; margin: 2px 0; }
   .detail .when, .detail .meta { color: var(--ink-2); font-size: 13px; }
   .detail .slots { display: flex; gap: 6px; margin: 8px 0; text-align: center; }
@@ -125,7 +149,7 @@
 
   /* 手機：面板變成貼齊上緣的一條，只留日期、摘要、一行圖例；其他收進「圖例說明與設定」 */
   @media (max-width: 599px) {
-    .panel { top: 0; left: 0; right: 0; width: auto; border-radius: 0 0 12px 12px; padding: 8px 10px 4px; }
+    .panel { top: 0; left: 0; right: 0; width: auto; border-radius: 0 0 12px 12px; padding: 8px 10px 4px; max-height: 75%; }
     .panel h1 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
     .summary { margin: 8px 0 6px; }
     .trip { grid-template-columns: 1fr 1fr 1fr; margin-top: 6px; }
@@ -165,9 +189,20 @@
       <span><i class="dot ring"></i>藍框＝偏冷（體感 12°C 以下）</span>
       <span><i class="dot sq c-gray"></i>方形＝室內</span>
     </div>
-    <label><input type="checkbox" id="hideIndoor"> 只看戶外景點（隱藏室內、商圈、夜市、老街）</label>
     <p class="note" id="info"></p>
     <p class="note">天氣資料來源：交通部中央氣象署</p>
+    <p class="note">景點資料與照片來源：交通部觀光署</p>
+  </details>
+  <details class="filters" id="filters">
+    <summary id="filtersTitle">篩選景點</summary>
+    <p class="group">類型</p>
+    <div class="opts" id="typeFilters"></div>
+    <p class="group">天氣適配</p>
+    <div class="opts" id="fitFilters"></div>
+    <div class="opts">
+      <label class="wide"><input type="checkbox" id="onlyGood"> 只看好天氣（選定那天是綠色的）</label>
+      <label class="wide"><input type="checkbox" id="hideIndoor"> 只看戶外景點（隱藏室內、商圈、夜市、老街）</label>
+    </div>
   </details>
 </div>
 <div id="map" role="region" aria-label="台灣景點地圖"></div>
@@ -183,12 +218,14 @@
 <script src="lib/spot-join.js"></script>
 <script src="lib/day-labels.js"></script>
 <script src="lib/spot-view.js"></script>
+<script src="lib/map-layers.js"></script>
 <!-- 事先算好的車程（scripts/build-drive-times.js 產出）。這裡只載入選單要用的索引，各縣市的車程選了出發地才載入 -->
 <script src="drive/index.js"></script>
 <script src="lib/drive-time.js"></script>
 <script>
 (async function () {
-  const HIDE_SETTINGS = ['室內', '商圈、夜市、老街（戶外街區）'];
+  // 依縮放選層、畫面上限、合併距離的設定值（lib/map-layers.js）；window.MAP_CONFIG 可以換掉（測試用）
+  const CFG = Object.assign({}, MapLayers.DEFAULTS, window.MAP_CONFIG || {});
   // 綠色疊最上面：使用者要找的是綠色，不能被紅點蓋住
   const Z_ORDER = { green: 300, yellow: 200, red: 100, gray: 0 };
   const $ = (id) => document.getElementById(id);
@@ -210,18 +247,19 @@
     notice('預報資料暫時讀不到，請稍後重新整理。');
     return;
   }
-  // 預報按鄉鎮存，景點自己記鄉鎮：接起來。這一版地圖只畫第 1 層（原本的 190 個熱門景點）。
-  data = SpotJoin.join(data, attractions, 1);
+  // 預報按鄉鎮存，景點自己記鄉鎮：接起來。四層都接，要畫哪幾層照縮放決定。
+  data = SpotJoin.join(data, attractions, 4);
 
   // 桌機先把「圖例說明與設定」打開；手機收著，地圖才看得到
   $('more').open = !narrow();
 
-  const map = L.map('map', { zoomControl: false, zoomSnap: 0.25 });
+  // 先給一個大概的全台視角：要畫哪些點得先知道畫面範圍；最後面再用 fitBounds 對準
+  const map = L.map('map', { zoomControl: false, zoomSnap: 0.25, center: [23.7, 120.9], zoom: 7.5 });
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   // 政府資料開放授權，免金鑰、免費。車程和部分景點座標來自 OpenStreetMap，出處照樣標示。
   L.tileLayer('https://wmts.nlsc.gov.tw/wmts/EMAP/default/GoogleMapsCompatible/{z}/{y}/{x}', {
     maxZoom: 18,
-    attribution: '地圖 &copy; 內政部國土測繪中心 | 車程與景點座標 &copy; OpenStreetMap contributors',
+    attribution: '地圖 &copy; 內政部國土測繪中心 | 車程與景點座標 &copy; OpenStreetMap contributors | 景點 &copy; 交通部觀光署',
   }).addTo(map);
 
   // 「今天」用打開網頁時的台灣日期算；假資料沒有真的日期，用它的第一天當今天
@@ -231,6 +269,49 @@
   let selected = null;     // 目前打開資訊的景點；切換日期時留著，方便比較同一個景點
   let reopening = false;   // 程式自己換資訊框內容時，不要當成使用者關掉
   const layer = L.layerGroup().addTo(map);
+
+  // 篩選面板：九類、三種天氣適配預設全勾
+  function checkboxes(containerId, names) {
+    return names.map((name) => {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = true;
+      input.value = name;
+      input.onchange = () => render();
+      label.appendChild(input);
+      const text = document.createElement('span');
+      text.textContent = (containerId === 'typeFilters' ? MapLayers.typeIcon(name) + ' ' : '') + name;
+      label.appendChild(text);
+      $(containerId).appendChild(label);
+      return input;
+    });
+  }
+  const typeBoxes = checkboxes('typeFilters', MapLayers.TYPES);
+  const fitBoxes = checkboxes('fitFilters', MapLayers.FITS);
+  const filterState = () => ({
+    types: typeBoxes.filter((b) => b.checked).map((b) => b.value),
+    fits: fitBoxes.filter((b) => b.checked).map((b) => b.value),
+    onlyGood: $('onlyGood').checked,
+    hideIndoor: $('hideIndoor').checked,
+  });
+
+  // 景點的照片、描述、網站在 public/attraction-details.js，第一次點開景點才載入（景點檔太大，拆開）
+  let detailsLoading = null;
+  function loadDetails() {
+    if (window.ATTRACTION_DETAILS) return null;
+    if (!detailsLoading) {
+      detailsLoading = new Promise((resolve) => {
+        const el = document.createElement('script');
+        el.src = 'public/attraction-details.js';
+        el.onload = () => resolve();
+        el.onerror = () => { detailsLoading = null; resolve(); };
+        document.head.appendChild(el);
+      });
+    }
+    return detailsLoading;
+  }
+  const detailOf = (s) => (window.ATTRACTION_DETAILS && window.ATTRACTION_DETAILS[s.id]) || s;
 
   // 出發地和車程。車程檔還沒產出或載入失敗時 driveIndex 是 null，這一列就不顯示。
   const driveIndex = window.DRIVE_INDEX || null;
@@ -247,7 +328,15 @@
   // 景點資訊：先講結論，再講各時段，最後才是景點本身的資料
   function detailHtml(s, day) {
     const color = SpotView.colorOf(s, dayIndex);
-    let html = `<div class="detail"><div class="name">${esc(s.name)}${s.setting === '室內' ? '（室內）' : ''}</div>` +
+    const more = detailOf(s);
+    const types = s.types && s.types.length ? s.types : [];
+    const icon = esc(MapLayers.typeIcon(types[0]));
+    // 縮圖直接連觀光署的照片網址；載不到就藏起來，換成類型的圖示
+    let html = '<div class="detail">' + (more.image && more.image.url
+      ? `<img class="thumb" src="${esc(more.image.url)}" alt="${esc(more.image.name || s.name)}" width="260" height="150" loading="lazy" referrerpolicy="no-referrer"` +
+        ` onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="thumb-icon" hidden aria-hidden="true">${icon}</div>`
+      : `<div class="thumb-icon" aria-hidden="true">${icon}</div>`) +
+      `<div class="name">${esc(s.name)}${s.setting === '室內' ? '（室內）' : ''}</div>` +
       `<div class="verdict"><i class="dot c-${color}"></i>${esc(SpotView.verdict(day))}</div>`;
     if (!day) {
       html += '<div class="when">這個景點對不到鄉鎮預報。</div>';
@@ -267,9 +356,15 @@
     }
     const minutes = origin ? minutesTo(s.county, s.name) : undefined;
     if (minutes !== undefined) html += `<div class="when">${esc(DriveTime.durationText(origin.county + origin.town, minutes))}</div>`;
-    return html + `<div class="meta">${esc(s.county)}${esc(s.town)} · ${esc(s.setting)} · ` +
-      `2025 遊客 ${Number(s.visitors).toLocaleString('zh-TW')} 人次</div>` +
-      `<a class="route" href="${esc(SpotView.routeUrl(s))}" target="_blank" rel="noopener">用 Google 地圖規劃路線</a></div>`;
+    if (more.excerpt) html += `<div class="excerpt">${esc(more.excerpt)}</div>`;
+    const tags = [...types, s.weatherFit].filter(Boolean);
+    if (tags.length) html += '<div class="tags">' + tags.map((t) => `<span>${esc(t)}</span>`).join('') + '</div>';
+    // 2025 遊客人次只有第 1 層（原本的熱門景點）有
+    const meta = [esc(s.county) + esc(s.town), s.setting ? esc(s.setting) : '',
+      s.layer === 1 && s.visitors !== undefined ? `2025 遊客 ${Number(s.visitors).toLocaleString('zh-TW')} 人次` : ''].filter(Boolean);
+    html += `<div class="meta">${meta.join(' · ')}</div>`;
+    if (more.website) html += `<a class="site" href="${esc(more.website)}" target="_blank" rel="noopener">官方網站</a>`;
+    return html + `<a class="route" href="${esc(SpotView.routeUrl(s))}" target="_blank" rel="noopener">用 Google 地圖規劃路線</a></div>`;
   }
 
   function closeSheet() {
@@ -280,6 +375,8 @@
   // 手機用底部面板（不會被上面的面板蓋住），桌機用地圖的資訊框
   function showDetail() {
     if (!selected) return;
+    const waiting = loadDetails();
+    if (waiting) { waiting.then(() => showDetail()); return; }
     const html = detailHtml(selected, dayOf(selected));
     const at = [selected.lat, selected.lng];
     reopening = true;
@@ -304,11 +401,26 @@
     render();
   }
 
+  // 合併的點：點了拉近到這幾個景點的範圍；已經拉到最近還疊在一起，就不再合併（見 place 的 clusterPx）
+  function zoomInto(members) {
+    const lats = members.map((m) => m.lat);
+    const lngs = members.map((m) => m.lng);
+    map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]],
+      { padding: [48, 48], maxZoom: map.getMaxZoom() });
+  }
+
   function render() {
     layer.clearLayers();
-    const hide = $('hideIndoor').checked;
-    const shown = data.spots.filter((s) => !(hide && HIDE_SETTINGS.includes(s.setting)));
-    // 選了出發地又選了車程上限，才用車程篩；到不了的景點（例如離島）這時也拿掉
+    const filters = filterState();
+    const active = MapLayers.filtersActive(filters);
+    $('filtersTitle').textContent = active ? '篩選景點（已篩選）' : '篩選景點';
+    // 依縮放決定畫到第幾層；有打開篩選時放寬一級
+    const zoom = map.getZoom();
+    const maxLayer = MapLayers.maxLayer(zoom, active, CFG);
+    const candidates = data.spots.filter((s) => s.layer <= maxLayer);
+    const shown = MapLayers.applyFilters(candidates, filters, SpotView.colorOf, dayIndex);
+    // 選了出發地又選了車程上限，才用車程篩；到不了的景點（例如離島）這時也拿掉。
+    // 車程只算了第 1 層的熱門景點，其他層這時沒有車程，先不顯示。
     const drive = origin && driveLimit !== null ? DriveTime.apply(shown, minutesTo, driveLimit) : null;
     const visible = drive ? drive.visible : shown;
     // 目前打開資訊的景點被篩掉了，資訊也一起收起來
@@ -317,9 +429,27 @@
       closeSheet();
       map.closePopup();
     }
-    for (const s of visible) {
+    // 只畫畫面裡的；太近的合併，最多 CFG.cap 個點。拉到最近還疊在一起就不再合併。
+    const bounds = map.getBounds();
+    const inView = visible.filter((s) => bounds.contains([s.lat, s.lng]));
+    const toPoint = (s) => map.latLngToContainerPoint([s.lat, s.lng]);
+    const placed = MapLayers.place(inView, toPoint, { cap: CFG.cap, clusterPx: zoom >= map.getMaxZoom() - 1 ? 0 : CFG.clusterPx });
+    // 選到的景點一定畫成單獨的點，不藏在合併的點裡
+    let drawn = 0;
+    for (const g of placed.groups) {
+      const s = g.members.includes(selected) ? selected : g.lead;
+      const rest = g.members.filter((m) => m !== s);
+      drawn += g.members.length;
       const day = dayOf(s);
       const color = SpotView.colorOf(s, dayIndex);
+      if (rest.length && s !== selected) {
+        const n = g.members.length;
+        const icon = L.divIcon({ className: 'spot', html: `<div class="cluster c-${color}" data-color="${color}">${n}</div>`, iconSize: [40, 40], iconAnchor: [20, 20] });
+        L.marker([s.lat, s.lng], { icon, title: `${n} 個景點：點了拉近看`, zIndexOffset: 500 + Z_ORDER[color] })
+          .on('click', () => zoomInto(g.members))
+          .addTo(layer);
+        continue;
+      }
       const cls = `marker c-${color}${s.setting === '室內' ? ' indoor' : ''}${day && day.cold ? ' cold' : ''}${s === selected ? ' sel' : ''}`;
       const icon = L.divIcon({
         className: 'spot',
@@ -331,16 +461,24 @@
       L.marker([s.lat, s.lng], { icon, title: `${s.name}：${SpotView.verdict(day)}`, zIndexOffset: (s === selected ? 1000 : 0) + Z_ORDER[color] })
         .on('click', () => { selected = s; render(); showDetail(); })
         .addTo(layer);
+      if (rest.length) drawn -= rest.length; // 選到的景點拆出來了，其他的這次沒畫到
     }
-    const summary = SpotView.summarize(visible, dayIndex);
+    // 摘要只算熱門景點（第 1 層），拖動、縮放地圖時不會跟著跳
+    const summary = SpotView.summarize(visible.filter((s) => s.layer === 1), dayIndex);
     $('summary').textContent = drive ? DriveTime.summaryText(summary, driveLimit) : SpotView.summaryText(summary);
+    const noTime = drive ? shown.filter((s) => s.layer !== 1).length : 0;
     const driveNote = driveFailed ? '車程資料暫時讀不到，請稍後重新整理。'
-      : drive && drive.unreachable ? `有 ${drive.unreachable} 個景點開車到不了（例如離島），沒有列入。` : '';
+      : [drive && drive.unreachable ? `有 ${drive.unreachable} 個景點開車到不了（例如離島），沒有列入。` : '',
+        noTime ? '車程只算了熱門景點，其他景點選了車程上限時先不顯示。' : ''].filter(Boolean).join('');
     $('driveNote').textContent = driveNote;
     $('driveNote').hidden = !driveNote;
     // 這天沒有灰色的景點，圖例就不用佔一格
     $('legendGray').hidden = summary.gray === 0;
-    $('info').textContent = `顯示 ${visible.length} / ${data.spots.length} 個景點。${DayLabels.updatedText(data.generatedAt)}`;
+    const marks = placed.groups.length;
+    $('info').textContent = `顯示 ${drawn} / ${candidates.length} 個景點` +
+      (marks !== drawn ? `（畫面上 ${marks} 個點）` : '') + '。' +
+      (placed.overflow ? `還有 ${placed.overflow} 個景點，拉近才看得到。` : '') +
+      DayLabels.updatedText(data.generatedAt);
   }
 
   if (data.source === 'fixture') {
@@ -366,6 +504,7 @@
     daysEl.appendChild(b);
   });
   $('hideIndoor').onchange = render;
+  $('onlyGood').onchange = render;
 
   // ---- 出發地和車程 ----
   const option = (value, text) => {
@@ -464,6 +603,8 @@
   }
   $('sheetClose').onclick = () => { closeSheet(); unselect(); };
   map.on('popupclose', unselect);
+  // 拖動、縮放地圖：重新決定畫哪些點（層、畫面上限、合併）
+  map.on('moveend', () => render());
   // 手機轉向或視窗拉寬拉窄：景點資訊換到對的位置，圖例說明照新的寬度開或收
   mq.addEventListener('change', () => { $('more').open = !narrow(); showDetail(); });
   // 地圖放大，標記跟著變大，比較好點

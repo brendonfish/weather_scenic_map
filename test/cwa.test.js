@@ -235,7 +235,8 @@ test('W-22 第二個輸出檔寫不進去時：exit 非 0，forecast.json 也不
     assert.notEqual(r.status, 0);
     assert.deepEqual(read(), ['OLD', 'DIR']);
     // 沒留下暫存檔。景點檔排在預報前面先換上去（新景點配舊預報只是少了顏色），所以會在
-    assert.deepEqual(fs.readdirSync(path.join(dir, 'public')).sort(), ['attractions.js', 'attractions.json', 'forecast.js', 'forecast.json']);
+    // 景點檔 2026-11-28 拆成精簡檔和詳細資料（卡片 AULA6cHZ），所以多兩個
+    assert.deepEqual(fs.readdirSync(path.join(dir, 'public')).sort(), ['attraction-details.js', 'attraction-details.json', 'attractions.js', 'attractions.json', 'forecast.js', 'forecast.json']);
   });
 });
 

@@ -83,11 +83,16 @@ test('P-4 build-site.sh 用 fixture 跑：_site 只放網頁要用的檔，網�
     // drive/ 是事先算好的車程：一份索引加每個縣市一個檔，原樣帶過去
     const driveFiles = listFiles(path.join(root, 'drive')).map((f) => 'drive/' + f);
     assert.equal(driveFiles.length, 23);
-    assert.deepEqual(listFiles(site), [...driveFiles, 'index.html', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/spot-join.js', 'lib/spot-view.js', 'public/attractions.js', 'public/attractions.json', 'public/forecast.js', 'public/forecast.json'].sort());
+    // 2026-11-28 多了 lib/map-layers.js 和點開景點才載的 public/attraction-details.*（卡片 AULA6cHZ）
+    assert.deepEqual(listFiles(site), [...driveFiles, 'index.html', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/map-layers.js', 'lib/spot-join.js', 'lib/spot-view.js', 'public/attraction-details.js', 'public/attraction-details.json', 'public/attractions.js', 'public/attractions.json', 'public/forecast.js', 'public/forecast.json'].sort());
     // index.html 用到的本機檔案（不是 CDN 的）在 _site 裡都找得到
     const page = fs.readFileSync(path.join(site, 'index.html'), 'utf8');
     const local = [...page.matchAll(/(?:src="|fetch\(')([^"':]+?)["']/g)].map((m) => m[1]);
-    assert.deepEqual([...new Set(local)].sort(), ['drive/index.js', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/spot-join.js', 'lib/spot-view.js', 'public/attractions.js', 'public/attractions.json', 'public/forecast.js', 'public/forecast.json']);
+    // 點開景點才載的詳細資料是程式動態加的 <script>（el.src = '...'），也要找得到
+    local.push(...[...page.matchAll(/\.src = '([^']+\.js)'/g)].map((m) => m[1]));
+    // 資訊框縮圖的 src 是觀光署照片的網址（程式組出來的），不是本機檔案
+    for (let i = local.length - 1; i >= 0; i--) if (local[i].includes('${')) local.splice(i, 1);
+    assert.deepEqual([...new Set(local)].sort(), ['drive/index.js', 'lib/day-labels.js', 'lib/drive-time.js', 'lib/map-layers.js', 'lib/spot-join.js', 'lib/spot-view.js', 'public/attraction-details.js', 'public/attractions.js', 'public/attractions.json', 'public/forecast.js', 'public/forecast.json']);
     for (const f of local) assert.ok(fs.existsSync(path.join(site, f)), f);
     const attractions = JSON.parse(fs.readFileSync(path.join(site, 'public', 'attractions.json'), 'utf8'));
     assert.equal(attractions.filter((a) => a.layer === 1).length, 190);

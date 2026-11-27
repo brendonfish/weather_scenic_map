@@ -6,7 +6,7 @@
 # 這台 VM 不放氣象署授權碼。景點檔第 1 層的數量跟 data/spots_2025_top10.csv 對不上、或預報不是按鄉鎮存的，就不換，網站維持上一次的資料。
 # 約定：
 #   - 放哪些檔要跟 scripts/build-site.sh 一樣（test/vm-deploy.test.js 會比對）。
-#   - Pages 上的預報在 public/forecast.json、public/forecast.js，景點檔在 public/attractions.json、public/attractions.js（build-site.sh 放的位置）。
+#   - Pages 上的預報在 public/forecast.json、public/forecast.js，景點檔在 public/attractions.json、public/attractions.js、public/attraction-details.json、public/attraction-details.js（build-site.sh 放的位置）。
 #   - 每個 .html、.js、.json 旁邊放一份先壓好的 .gz（Caddyfile 的 precompressed gzip 會直接送），
 #     檔案時間沿用原檔：內容沒變時間就不變，瀏覽器才拿得到 304。VM 重新 clone 時時間會變，只是多下載一次。
 #   - VM 要有 git、curl、python3；BASE、LIVE 的上一層要讓跑的人能寫；LIVE 第一次不能是實體資料夾。
@@ -32,12 +32,14 @@ chmod 755 "$NEW"
 mkdir -p "$NEW/lib" "$NEW/public"
 # 保留檔案時間（cp -p、curl -R）：內容沒變的檔時間就不變，瀏覽器問「有沒有變」時 Caddy 才回 304
 cp -p "$REPO/index.html" "$NEW/"
-cp -p "$REPO/lib/day-labels.js" "$REPO/lib/spot-view.js" "$REPO/lib/drive-time.js" "$REPO/lib/spot-join.js" "$NEW/lib/"
+cp -p "$REPO/lib/day-labels.js" "$REPO/lib/spot-view.js" "$REPO/lib/drive-time.js" "$REPO/lib/spot-join.js" "$REPO/lib/map-layers.js" "$NEW/lib/"
 cp -Rp "$REPO/drive" "$NEW/drive"
 curl -fsSR --max-time 60 -o "$NEW/public/forecast.json" "$PAGES/public/forecast.json"
 curl -fsSR --max-time 60 -o "$NEW/public/forecast.js" "$PAGES/public/forecast.js"
 curl -fsSR --max-time 60 -o "$NEW/public/attractions.json" "$PAGES/public/attractions.json"
 curl -fsSR --max-time 60 -o "$NEW/public/attractions.js" "$PAGES/public/attractions.js"
+curl -fsSR --max-time 60 -o "$NEW/public/attraction-details.json" "$PAGES/public/attraction-details.json"
+curl -fsSR --max-time 60 -o "$NEW/public/attraction-details.js" "$PAGES/public/attraction-details.js"
 
 # 防呆：預報要是按鄉鎮存的（有 towns），景點檔第 1 層的數量要跟 repo 的景點清單一樣多，不然丟掉這一版
 if ! python3 - "$NEW/public/forecast.json" "$NEW/public/attractions.json" "$REPO/data/spots_2025_top10.csv" <<'PY'
