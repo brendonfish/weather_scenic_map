@@ -51,6 +51,10 @@ function main() {
   console.log(`四層：${Object.entries(stats.layers).map(([l, n]) => `第 ${l} 層 ${n}`).join('、')}，共 ${list.length} 筆`);
   console.log(`主要類型：${Object.entries(stats.types).map(([t, n]) => `${t} ${n}`).join('、')}`);
   console.log(`天氣適配：${Object.entries(stats.weatherFit).map(([t, n]) => `${t} ${n}`).join('、')}`);
+  if (stats.aliasMissing.length) {
+    console.log('注意：data/layer1-aliases.csv 這幾筆的景點 ID 在資料庫找不到（打錯，或已經停業、被清掉），沒有用到：');
+    for (const x of stats.aliasMissing) console.log(`  - ${x.name} → ${x.id}`);
+  }
   if (unmatched.length) {
     console.log('第 2 層對不上的名單：');
     for (const u of unmatched) console.log(`  - ${u.county} ${u.statName}（${u.reason}）`);

@@ -481,3 +481,44 @@ test('D-7 真的 data/attractions.json：卡片列的 8 組重複都已經併掉
   assert.equal(l1.filter((a) => !a.image).length, 20);
   assert.equal(new Set(list.map((a) => a.id)).size, list.length);
 });
+
+test('D-8 順序不影響：前面的景點不會用「名字包含」搶走後面景點名字完全一樣的那一筆，也不會搶走對照表指定的那一筆', () => {
+  const pool = [
+    attr({ id: 'A_KM', name: '臺南孔廟', city: '臺南市', town: '中西區', lat: 22.9905, lng: 120.2045, images: [{ Name: '孔廟', URL: 'https://example.test/km.jpg' }] }),
+    attr({ id: 'A_MO', name: 'Mitsui Outlet Park 林口', city: '新北市', town: '林口區', lat: 25.0710, lng: 121.3660 }),
+  ];
+  const kmPark = l1spot({ name: '臺南孔廟文化園區', county: '台南市', town: '中西區', lat: 22.9906, lng: 120.2046 });
+  const km = l1spot({ name: '臺南孔廟', county: '台南市', town: '中西區', lat: 22.9905, lng: 120.2045 });
+  const outletPark = l1spot({ name: 'Mitsui Outlet Park', county: '新北市', town: '林口區', lat: 25.0709, lng: 121.3659 });
+  const mitsui = l1spot({ name: '林口三井Outlet', county: '新北市', town: '林口區', lat: 25.0703, lng: 121.3654 });
+  const aliases = [{ name: '林口三井Outlet', id: 'A_MO' }];
+  for (const top of [[kmPark, km, outletPark, mitsui], [km, kmPark, mitsui, outletPark]]) {
+    const { list } = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG, aliases });
+    const by = (n) => list.find((a) => a.layer === 1 && a.name === n);
+    assert.equal(by('臺南孔廟').id, 'A_KM', top.map((s) => s.name).join('、'));
+    assert.equal(by('林口三井Outlet').id, 'A_MO', top.map((s) => s.name).join('、'));
+  }
+});
+
+test('D-9 2024 人次統計自己的據點（第 2 層）不會被當成第 1 層的其他寫法拿掉', () => {
+  const top = [l1spot({ name: '南鯤鯓代天府', county: '台南市', town: '北門區', lat: 23.2870, lng: 120.1390 })];
+  const pool = [
+    attr({ id: 'A_T', name: '南鯤鯓代天府', city: '臺南市', town: '北門區', lat: 23.2871, lng: 120.1391 }),
+    attr({ id: 'A_G', name: '南鯤鯓代天府大鯤園', city: '臺南市', town: '北門區', lat: 23.2880, lng: 120.1395 }),
+  ];
+  const visitors = [{ name: '南鯤鯓代天府大鯤園', county: '臺南市', visitors: 1 }];
+  const { list, stats } = buildAttractions({ attractions: pool, visitors, top, config: CONFIG });
+  assert.equal(layerOf(list, 'A_G'), 2);
+  assert.equal(stats.layer2InLayer1, 0);
+  assert.equal(stats.layer1Duplicates, 0);
+});
+
+test('D-10 對照表：名稱大小寫不同也對得到；指定的景點 ID 找不到時，列在 stats.aliasMissing', () => {
+  const top = [l1spot({ name: '林口三井Outlet', county: '新北市', town: '林口區', lat: 25.0703, lng: 121.3654 })];
+  const pool = [attr({ id: 'A_MO', name: 'Mitsui Outlet Park 林口', city: '新北市', town: '林口區', lat: 25.0710, lng: 121.3660 })];
+  const ok = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG, aliases: [{ name: '林口三井outlet', id: 'A_MO' }] });
+  assert.equal(ok.list.find((a) => a.layer === 1).id, 'A_MO');
+  assert.deepEqual(ok.stats.aliasMissing, []);
+  const bad = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG, aliases: [{ name: '林口三井Outlet', id: 'A_TYPO' }] });
+  assert.deepEqual(bad.stats.aliasMissing, [{ name: '林口三井Outlet', id: 'A_TYPO' }]);
+});
