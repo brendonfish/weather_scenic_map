@@ -1,5 +1,5 @@
 // 產出網頁要用的 public/forecast.json（預報按鄉鎮存）和 public/attractions.json（景點檔，從 data/attractions.json 複製），
-// 各另外寫一份 .js，讓直接雙擊打開 index.html 也讀得到。
+// 各另外寫一份 .js，讓直接雙擊打開 index.html 也讀得到。景點的照片、描述、網站另外放在 public/attraction-details.json（點開景點才載）。
 // 景點檔 data/attractions.json 是事先做好、commit 在 repo 裡的（scripts/build-attractions.js），這支不重做、不下載。
 //
 // 跑法：
@@ -45,6 +45,16 @@ function writeOutputs(outDir, files) {
   }
 }
 
+// 景點檔拆成畫點用的精簡檔（沒有照片、描述、網站）和詳細資料（用景點 id 查）
+function splitAttractions(spots) {
+  const details = {};
+  const compact = spots.map(({ image, excerpt, website, ...rest }) => {
+    details[rest.id] = { image: image ?? null, excerpt: excerpt ?? '', website: website ?? '' };
+    return rest;
+  });
+  return { compact, details };
+}
+
 async function main() {
   if (unknown.length) {
     throw new Error(`不認得的參數：${unknown.join(' ')}。要用假資料請加 --fixture；抓氣象署不用加參數。`);
@@ -73,9 +83,14 @@ async function main() {
   const outDir = path.join(root, 'public');
   fs.mkdirSync(outDir, { recursive: true });
   const json = JSON.stringify(data);
-  const attractionsJson = JSON.stringify(spots);
-  // 四個檔一起換：景點檔先換（網頁拿新景點配舊預報，只是新景點沒顏色；反過來會整片對不上）
+  // 景點檔拆兩份，網頁一打開只載畫點用的精簡檔；照片、描述、網站點開景點才載（卡片 AULA6cHZ：超過 2 MB 要拆）
+  const { compact, details } = splitAttractions(spots);
+  const attractionsJson = JSON.stringify(compact);
+  const detailsJson = JSON.stringify(details);
+  // 一起換：景點檔先換（網頁拿新景點配舊預報，只是新景點沒顏色；反過來會整片對不上）
   writeOutputs(outDir, [
+    ['attraction-details.js', `window.ATTRACTION_DETAILS = ${detailsJson};\n`],
+    ['attraction-details.json', detailsJson + '\n'],
     ['attractions.js', `window.ATTRACTIONS_DATA = ${attractionsJson};\n`],
     ['attractions.json', attractionsJson + '\n'],
     ['forecast.js', `window.FORECAST_DATA = ${json};\n`],
@@ -90,7 +105,7 @@ async function main() {
   if (Object.values(data.towns).some((t) => t[0]?.partial)) {
     console.log(`${days[0]} 已經過了一部分，只算還沒過的時段。`);
   }
-  console.log(`景點：${spots.length} 個（第 1 層 ${spots.filter((s) => s.layer === 1).length} 個），預報 ${Object.keys(data.towns).length} 個鄉鎮，寫到 public/forecast.json、public/attractions.json`);
+  console.log(`景點：${spots.length} 個（第 1 層 ${spots.filter((s) => s.layer === 1).length} 個），預報 ${Object.keys(data.towns).length} 個鄉鎮，寫到 public/forecast.json、public/attractions.json、public/attraction-details.json`);
   if (coverage.missing.length) {
     console.log(`${coverage.missing.length} 個縣市沒有 ${days.join('、')} 的資料（地圖上會是灰色）：${coverage.missing.join('、')}`);
   }

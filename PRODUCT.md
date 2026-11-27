@@ -34,7 +34,7 @@ web
 
 - 降雨顏色的意義和門檻不能改：最高降雨機率 20% 以下綠色、30–50% 黃色、60% 以上紅色、沒資料灰色。色調可以微調，意義不能變。（Ray 確認）
 - 純 JavaScript，不用需要編譯的框架。地圖用 Leaflet（CDN 載入）。不加 npm 套件。（專案 `CLAUDE.md` 的規定）
-- 網頁只讀 `public/forecast.json`（預報）和 `public/attractions.json`（景點），不直接連氣象署。
+- 網頁只讀 `public/forecast.json`（預報）、`public/attractions.json`（景點，畫點用），點開景點才讀 `public/attraction-details.json`（照片、描述、網站），不直接連氣象署。
 - 要標示「天氣資料來源：交通部中央氣象署」，地圖要保留 OpenStreetMap 的出處標示。
 - 景點清單 `data/spots_2025_top10.csv` 不能改。
 - 這是 MVP。
