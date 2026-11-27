@@ -41,6 +41,30 @@ Settings → Pages → Build and deployment：Source 選「**GitHub Actions**」
 repo 頁面 → Actions → 左邊選「更新天氣預報」→ 右邊「Run workflow」→ 再按一次綠色的「Run workflow」。
 跑完（build 和 deploy 兩個都是綠色勾勾），打開網址看「預報更新於」有沒有變成剛剛的時間。
 
+### 自己的網域：weatherway.good-picks.com
+
+同一個網站也放在 AWS 的 VM（3.90.174.187，Ubuntu，GoDaddy 的 DNS 指過去）。設定檔都在 `deploy/vm/`：
+
+- `sync.sh`：VM 上裝成 `/usr/local/bin/weatherway-sync`。程式從 GitHub repo 的 main 拉，預報和景點檔從上面的 GitHub Pages 抓。預報要是按鄉鎮存的、景點檔第 1 層剛好 190 個（跟 `data/spots_2025_top10.csv` 一樣多）才換上去。VM 不放授權碼。
+- `weatherway.cron`：放到 `/etc/cron.d/weatherway`，每小時 10 分跑一次 `sync.sh`。push 之後最多 1 小時 VM 就會跟上。
+- `Caddyfile`：放到 `/etc/caddy/Caddyfile`。Caddy 自己申請和續約 HTTPS 憑證。它直接送 `sync.sh` 先壓好的 `.gz`（不用每個請求重壓），並讓瀏覽器快取 5 分鐘，過了再問有沒有變（沒變只回 304）。
+
+換一台新 VM 時先做一次（AWS 安全群組要開 80、443；DNS 先指好，Caddy 才拿得到憑證）：
+
+```bash
+ssh -i ~/Documents/Docs/AWS/aws_key-1.pem ubuntu@新的IP 'sudo apt-get update && sudo apt-get install -y caddy git curl python3 && sudo mkdir -p /opt/weatherway /var/www && sudo chown ubuntu:ubuntu /opt/weatherway /var/www'
+```
+
+（`/var/www/weatherway` 由 `sync.sh` 建成連結，不要先建成資料夾。）接著跑下面那段指令裝設定檔。
+
+改了 `deploy/vm/` 的檔案，也要用這段複製到 VM 上（VM 不會自動更新這三個檔）：
+
+```bash
+K=~/Documents/Docs/AWS/aws_key-1.pem; H=ubuntu@3.90.174.187
+scp -i $K deploy/vm/sync.sh deploy/vm/Caddyfile deploy/vm/weatherway.cron $H:/tmp/
+ssh -i $K $H 'sudo install -m 755 /tmp/sync.sh /usr/local/bin/weatherway-sync && sudo install -m 644 /tmp/weatherway.cron /etc/cron.d/weatherway && sudo install -m 644 /tmp/Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy && weatherway-sync'
+```
+
 ### 本機試跑
 
 `bash scripts/build-site.sh --fixture` 會用假預報產出 `_site/`（已經在 `.gitignore` 裡），可以用瀏覽器打開 `_site/index.html` 看。
@@ -50,6 +74,7 @@ repo 頁面 → Actions → 左邊選「更新天氣預報」→ 右邊「Run wo
 面板上可以選出發地（縣市、鄉鎮）和車程上限（30 分鐘一格，到 5 小時），地圖只留車程內的景點，景點資訊會多一行「從○○開車約 1 小時 20 分（不含塞車）」。
 
 - 沒選出發地時，網頁跟原本一樣。選擇只記在自己的瀏覽器。
+- 按「📍 用我的位置」：瀏覽器會問要不要給位置，給了就自動選離你最近的鄉鎮當出發地（車程從那個鄉鎮的代表點算）。座標只在你的瀏覽器裡用來找鄉鎮，不存也不傳出去。離台灣的鄉鎮超過 30 公里、不給權限或拿不到位置時，會說原因，請你手動選。
 - 車程是事先用 OpenStreetMap 的路網算好的（國道、省道、市區道路速度不同），是不塞車時的估計。連假會比它久。
 - 出發地用的是鄉鎮裡的一個代表點，不是你家。面積很大的山區鄉鎮會比較不準。
 - 開車到不了的景點（從本島出發時是澎湖、金門、馬祖、小琉球）在開了車程上限後不顯示。

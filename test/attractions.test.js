@@ -144,6 +144,13 @@ test('A-9 第 3 層取的數量：1、2、8、14、40、65 個景點 → 1、2�
   assert.equal(layer3Quota(0, CONFIG), 0);
 });
 
+test('A-9b 第 3 層數量不受浮點誤差影響：100 × 0.07 剛好是 7，不會多取成 8', () => {
+  const cfg = { ratio: 0.07, min: 0, max: 1000 };
+  assert.equal(layer3Quota(100, cfg), 7);
+  assert.equal(layer3Quota(1000, cfg), 70);
+  assert.equal(layer3Quota(101, cfg), 8); // 7.07 還是要無條件進位
+});
+
 test('A-10 改 layer-config.json 的數字，結果會跟著變', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'twm-layer-'));
   try {

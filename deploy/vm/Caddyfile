@@ -1,0 +1,13 @@
+# 旅遊天氣景點地圖，VM 上放在 /etc/caddy/Caddyfile。Caddy 自己申請和續約 HTTPS 憑證。
+# 網站檔案由 /usr/local/bin/weatherway-sync（deploy/vm/sync.sh）每小時更新，.gz 也是它先壓好的。
+weatherway.good-picks.com {
+	root * /var/www/weatherway
+	# 瀏覽器快取 5 分鐘；過了再問「有沒有變」，沒變只回 304。
+	# 檔名沒有版本號，所以網頁和程式都不能快取太久，不然改版後會新舊混用。
+	header Cache-Control "public, max-age=300"
+	# 有 .gz 的檔直接送 .gz；沒有的（以後新增別種檔）才由 encode 即時壓縮
+	encode gzip
+	file_server {
+		precompressed gzip
+	}
+}

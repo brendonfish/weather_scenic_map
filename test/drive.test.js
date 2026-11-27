@@ -84,8 +84,8 @@ test('D-6 driveFiles：一份索引加每個縣市一個檔，網頁用 <script>
   for (const name of ['index.js', 'c00.js', 'c01.js']) vm.runInNewContext(files[name], { window });
   assert.deepEqual(plain(window.DRIVE_INDEX.spots), ['台北市|西門町商圈', '宜蘭縣|礁溪', '澎湖縣|吉貝']);
   assert.deepEqual(plain(window.DRIVE_INDEX.counties), [
-    { name: '台北市', file: 'c00.js', towns: ['萬華區', '北投區'] },
-    { name: '宜蘭縣', file: 'c01.js', towns: ['頭城鎮'] },
+    { name: '台北市', file: 'c00.js', towns: ['萬華區', '北投區'], points: [[25.03, 121.5], [25.13, 121.5]] },
+    { name: '宜蘭縣', file: 'c01.js', towns: ['頭城鎮'], points: [[24.86, 121.82]] },
   ]);
   assert.deepEqual(plain(window.DRIVE_TIMES['台北市']['北投區']), [28, 75, null]);
   assert.deepEqual(plain(window.DRIVE_TIMES['宜蘭縣']['頭城鎮']), [60, 12, null]);
@@ -154,7 +154,10 @@ function fakeDrive(data) {
   return {
     index: {
       spots: data.spots.map(spotKey),
-      counties: [{ name: '台北市', file: 'c00.js', towns: ['萬華區', '北投區'] }, { name: '宜蘭縣', file: 'c01.js', towns: ['頭城鎮'] }],
+      counties: [
+        { name: '台北市', file: 'c00.js', towns: ['萬華區', '北投區'], points: [[25.03, 121.5], [25.13, 121.5]] },
+        { name: '宜蘭縣', file: 'c01.js', towns: ['頭城鎮'], points: [[24.86, 121.82]] },
+      ],
     },
     times: { 台北市: { 萬華區: row, 北投區: row }, 宜蘭縣: { 頭城鎮: row } },
   };
@@ -259,6 +262,8 @@ test('D-17 車程檔：368 個鄉鎮、190 個景點，跟 towns.csv 和景點�
   let n = 0;
   for (const c of window.DRIVE_INDEX.counties) {
     vm.runInNewContext(fs.readFileSync(path.join(root, 'drive', c.file), 'utf8'), { window });
+    assert.equal(c.points.length, c.towns.length, c.name + ' 的鄉鎮和座標筆數');
+    assert.deepEqual(plain(c.points), towns.filter((t) => t.county === c.name).map((t) => [t.lat, t.lng]), c.name + ' 的座標');
     for (const t of c.towns) {
       const row = window.DRIVE_TIMES[c.name][t];
       assert.equal(row.length, 190, c.name + t);
@@ -267,4 +272,64 @@ test('D-17 車程檔：368 個鄉鎮、190 個景點，跟 towns.csv 和景點�
     }
   }
   assert.equal(n, 368);
+});
+
+test('D-18 DriveTime.nearestTown：找離座標最近的鄉鎮；離所有鄉鎮超過 30 公里就不選', () => {
+  const DriveTime = loadDriveTime();
+  const index = fakeDrive(fixtureData()).index;
+  // 台北車站附近 → 萬華區（不是北投區）
+  assert.deepEqual(plain(DriveTime.nearestTown(index, 25.047, 121.517)), { county: '台北市', town: '萬華區' });
+  // 頭城外海一點點 → 頭城鎮
+  assert.deepEqual(plain(DriveTime.nearestTown(index, 24.87, 121.85)), { county: '宜蘭縣', town: '頭城鎮' });
+  // 台中（離這三個鄉鎮都超過 30 公里）、香港
+  assert.equal(DriveTime.nearestTown(index, 24.14, 120.68), null);
+  assert.equal(DriveTime.nearestTown(index, 22.3, 114.17), null);
+  // 舊版車程檔沒有座標：不選
+  assert.equal(DriveTime.nearestTown({ counties: [{ name: '台北市', towns: ['萬華區'] }] }, 25.03, 121.5), null);
+});
+
+// 假的定位：answer 是 { lat, lng } 就回座標，是數字就當錯誤代碼（1 是使用者不給權限）
+const fakeGeo = (answer) => (ok, fail) => Promise.resolve().then(() =>
+  typeof answer === 'number' ? fail({ code: answer }) : ok({ coords: { latitude: answer.lat, longitude: answer.lng, accuracy: 50 } }));
+
+test('D-19 用我的位置：選最近的鄉鎮當出發地，選單跟著變；只記鄉鎮，不記座標', async () => {
+  const data = fixtureData();
+  const page = await runPage(data, { drive: fakeDrive(data), geo: fakeGeo({ lat: 25.12, lng: 121.51 }) });
+  const { els, rec } = page;
+  assert.equal(els.useLocation.hidden, false);
+  els.useLocation.onclick();
+  await tick(); await tick(); await tick();
+  assert.equal(els.originCounty.value, '台北市');
+  assert.equal(els.originTown.value, '北投區');
+  assert.equal(els.originTown.disabled, false);
+  assert.equal(els.driveLimit.disabled, false);
+  assert.match(els.locateNote.textContent, /最近的鄉鎮是台北市北投區/);
+  assert.equal(els.locateNote.hidden, false);
+  assert.equal(els.useLocation.disabled, false);
+  els.driveLimit.value = '30';
+  els.driveLimit.onchange();
+  assert.equal(rec.markers.length, 10);
+  rec.markers[0].handlers.click();
+  assert.match(rec.popupHtml, /從台北市北投區開車約 20 分/);
+  assert.deepEqual(JSON.parse(page.storage.driveTime), { county: '台北市', town: '北投區', limit: 30 });
+  // 之後自己換選單：「用你的位置」的說明收起來
+  els.originTown.value = '萬華區';
+  els.originTown.onchange();
+  assert.equal(els.locateNote.hidden, true);
+});
+
+test('D-20 用我的位置拿不到：講清楚原因，出發地不變；瀏覽器不支援定位就不顯示按鈕', async () => {
+  const data = fixtureData();
+  for (const [answer, why] of [[1, /沒有拿到位置權限/], [3, /暫時拿不到你的位置/], [{ lat: 22.3, lng: 114.17 }, /離台灣的鄉鎮太遠/]]) {
+    const { els } = await runPage(data, { drive: fakeDrive(data), geo: fakeGeo(answer) });
+    els.useLocation.onclick();
+    await tick(); await tick(); await tick();
+    assert.match(els.locateNote.textContent, why);
+    assert.match(els.locateNote.textContent, /手動選出發地/);
+    assert.equal(els.originCounty.value, '');
+    assert.equal(els.driveLimit.disabled, true);
+    assert.equal(els.useLocation.disabled, false);
+  }
+  const { els } = await runPage(data, { drive: fakeDrive(data) });
+  assert.equal(els.useLocation.hidden, true);
 });

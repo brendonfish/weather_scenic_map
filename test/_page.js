@@ -29,7 +29,8 @@ function toTownFormat(data) {
   return { forecast: { ...rest, towns }, attractions: spots.map(({ forecast, ...a }) => ({ layer: 1, ...a })) };
 }
 
-export async function runPage(input, { narrow = false, drive = null, storage = {}, attractions: given } = {}) {
+// geo：假的 navigator.geolocation.getCurrentPosition（沒給就當瀏覽器不支援定位）
+export async function runPage(input, { narrow = false, drive = null, storage = {}, geo = null, attractions: given } = {}) {
   const converted = given ? { forecast: input, attractions: given } : toTownFormat(input);
   const data = converted.forecast;
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
@@ -71,6 +72,7 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
       FORECAST_DATA: data, ATTRACTIONS_DATA: converted.attractions, matchMedia: () => ({ matches: narrow, addEventListener() {} }),
       DRIVE_INDEX: drive ? drive.index : undefined,
       localStorage: { getItem: (k) => storage[k] ?? null, setItem(k, v) { storage[k] = String(v); } },
+      navigator: geo ? { geolocation: { getCurrentPosition: geo } } : {},
     },
     document: {
       getElementById: (id) => (els[id] ??= el()),
