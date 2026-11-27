@@ -13,8 +13,26 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 // drive：{ index, times } 假的車程檔（沒給就當作 drive/ 還沒產出）；storage：瀏覽器裡已經記住的東西
 export const tick = () => new Promise((r) => setTimeout(r, 0));
 
+// 舊的測試資料是「每個景點各帶一份預報」（data.spots[i].forecast）。網頁現在讀按鄉鎮存的預報＋景點檔，
+// 這裡把舊格式換成新格式再餵給網頁。同一個鄉鎮給了不同的預報就丟錯，免得測試默默測錯東西。
+function toTownFormat(data) {
+  if (!data || !Array.isArray(data.spots)) return { forecast: data, attractions: [] };
+  const towns = {};
+  const norm = (s) => String(s ?? '').trim().replace(/台/g, '臺');
+  for (const s of data.spots) {
+    if (!s.forecast) continue;
+    const k = norm(s.county) + '|' + norm(s.town);
+    if (k in towns && JSON.stringify(towns[k]) !== JSON.stringify(s.forecast)) throw new Error(`測試資料裡 ${k} 有兩份不同的預報`);
+    towns[k] = s.forecast;
+  }
+  const { spots, ...rest } = data;
+  return { forecast: { ...rest, towns }, attractions: spots.map(({ forecast, ...a }) => ({ layer: 1, ...a })) };
+}
+
 // geo：假的 navigator.geolocation.getCurrentPosition（沒給就當瀏覽器不支援定位）
-export async function runPage(data, { narrow = false, drive = null, storage = {}, geo = null } = {}) {
+export async function runPage(input, { narrow = false, drive = null, storage = {}, geo = null, attractions: given } = {}) {
+  const converted = given ? { forecast: input, attractions: given } : toTownFormat(input);
+  const data = converted.forecast;
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const els = {};
   const el = () => ({
@@ -51,7 +69,7 @@ export async function runPage(data, { narrow = false, drive = null, storage = {}
   };
   const ctx = {
     window: {
-      FORECAST_DATA: data, matchMedia: () => ({ matches: narrow, addEventListener() {} }),
+      FORECAST_DATA: data, ATTRACTIONS_DATA: converted.attractions, matchMedia: () => ({ matches: narrow, addEventListener() {} }),
       DRIVE_INDEX: drive ? drive.index : undefined,
       localStorage: { getItem: (k) => storage[k] ?? null, setItem(k, v) { storage[k] = String(v); } },
       navigator: geo ? { geolocation: { getCurrentPosition: geo } } : {},
@@ -72,7 +90,7 @@ export async function runPage(data, { narrow = false, drive = null, storage = {}
     fetch: async () => { throw new Error('不該用到 fetch'); },
     Date, Number, String,
   };
-  for (const f of ['day-labels.js', 'spot-view.js', 'drive-time.js']) vm.runInNewContext(fs.readFileSync(path.join(root, 'lib', f), 'utf8'), ctx);
+  for (const f of ['day-labels.js', 'spot-view.js', 'drive-time.js', 'spot-join.js']) vm.runInNewContext(fs.readFileSync(path.join(root, 'lib', f), 'utf8'), ctx);
   const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
   vm.runInNewContext(scripts[scripts.length - 1][1], ctx);
   await tick();

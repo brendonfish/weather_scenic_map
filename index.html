@@ -179,6 +179,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha384-NElt3Op+9NBMCYaef5HxeJmU4Xeard/Lku8ek6hoPTvYkQPh3zLIrJP7KiRocsxO" crossorigin="anonymous"></script>
 <!-- 由 scripts/build-data.js 產出；直接雙擊打開網頁時用這份（瀏覽器不讓 file:// 用 fetch） -->
 <script src="public/forecast.js"></script>
+<script src="public/attractions.js"></script>
+<script src="lib/spot-join.js"></script>
 <script src="lib/day-labels.js"></script>
 <script src="lib/spot-view.js"></script>
 <!-- 事先算好的車程（scripts/build-drive-times.js 產出）。這裡只載入選單要用的索引，各縣市的車程選了出發地才載入 -->
@@ -200,14 +202,16 @@
   }
 
   let data = window.FORECAST_DATA;
-  if (!data) {
-    try {
-      data = await fetch('public/forecast.json').then((r) => r.json());
-    } catch (e) {
-      notice('預報資料暫時讀不到，請稍後重新整理。');
-      return;
-    }
+  let attractions = window.ATTRACTIONS_DATA;
+  try {
+    if (!data) data = await fetch('public/forecast.json').then((r) => r.json());
+    if (!attractions) attractions = await fetch('public/attractions.json').then((r) => r.json());
+  } catch (e) {
+    notice('預報資料暫時讀不到，請稍後重新整理。');
+    return;
   }
+  // 預報按鄉鎮存，景點自己記鄉鎮：接起來。這一版地圖只畫第 1 層（原本的 190 個熱門景點）。
+  data = SpotJoin.join(data, attractions, 1);
 
   // 桌機先把「圖例說明與設定」打開；手機收著，地圖才看得到
   $('more').open = !narrow();

@@ -73,22 +73,38 @@ test('V-1 sync.sh：VM 上的網站檔案跟 GitHub Pages 上的一模一樣，�
   });
 });
 
-test('V-2 Pages 上的預報不是 190 個景點：sync.sh 失敗，網站維持上一次的資料', () => {
+test('V-2 Pages 上的景點檔第 1 層不是 190 個：sync.sh 失敗，網站維持上一次的資料', () => {
+  withFakeWorld(({ pages, vmEnv, sync }) => {
+    assert.equal(sync().status, 0);
+    const before = fs.realpathSync(vmEnv.LIVE);
+    const f = path.join(pages, 'public', 'attractions.json');
+    const a = JSON.parse(fs.readFileSync(f, 'utf8'));
+    let kept = 0;
+    fs.writeFileSync(f, JSON.stringify(a.filter((x) => x.layer !== 1 || kept++ < 10)));
+    const r = sync();
+    assert.notEqual(r.status, 0, r.stdout + r.stderr);
+    assert.equal(fs.realpathSync(vmEnv.LIVE), before);
+    const live = JSON.parse(fs.readFileSync(path.join(vmEnv.LIVE, 'public', 'attractions.json'), 'utf8'));
+    assert.equal(live.filter((x) => x.layer === 1).length, 190);
+  });
+});
+
+test('V-2b Pages 上的預報沒有按鄉鎮存的 towns（例如還是舊格式）：sync.sh 失敗，網站維持上一次的資料', () => {
   withFakeWorld(({ pages, vmEnv, sync }) => {
     assert.equal(sync().status, 0);
     const before = fs.realpathSync(vmEnv.LIVE);
     const f = path.join(pages, 'public', 'forecast.json');
     const d = JSON.parse(fs.readFileSync(f, 'utf8'));
-    d.spots = d.spots.slice(0, 10);
+    delete d.towns;
     fs.writeFileSync(f, JSON.stringify(d));
     const r = sync();
     assert.notEqual(r.status, 0, r.stdout + r.stderr);
     assert.equal(fs.realpathSync(vmEnv.LIVE), before);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(vmEnv.LIVE, 'public', 'forecast.json'), 'utf8')).spots.length, 190);
+    assert.ok(JSON.parse(fs.readFileSync(path.join(vmEnv.LIVE, 'public', 'forecast.json'), 'utf8')).towns);
   });
 });
 
-test('V-4 景點數照 repo 的景點清單算，不寫死：清單少一筆、預報還是 190 個，就不換', () => {
+test('V-4 景點數照 repo 的景點清單算，不寫死：清單少一筆、景點檔第 1 層還是 190 個，就不換', () => {
   withFakeWorld(({ repo, vmEnv, sync }) => {
     assert.equal(sync().status, 0);
     const before = fs.realpathSync(vmEnv.LIVE);
