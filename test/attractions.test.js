@@ -394,3 +394,90 @@ test('A-20 真的 data/attractions.json：欄位齊全、原本 190 個都在第
   for (const s of spots) assert.ok(l1.some((a) => a.name === s.name && a.county === s.county && a.lat === s.lat && a.lng === s.lng), s.name);
   assert.equal(new Set(list.map((a) => a.id)).size, list.length);
 });
+
+// ---- 卡片 https://trello.com/c/c5TDNGOk ：第 1 層跟第 2–4 層重複的同一個地點只留一筆 ----
+
+// 一個第 1 層景點（spots_2025_top10.csv 的欄位）
+const l1spot = (o) => ({ county: '嘉義縣', town: '太保市', lat: 23.4720, lng: 120.2915, visitors: 1, setting: '室內', point: '', ...o });
+// 往北移 km 公里的緯度
+const north = (lat, km) => lat + km / 111.2;
+const layerOf = (list, id) => list.find((a) => a.id === id)?.layer;
+
+test('D-1 名字一邊包含另一邊、0.3 公里內：併成一筆，沒照片的補上照片，那一筆不再出現在第 2–4 層', () => {
+  const top = [l1spot({ name: '國立故宮博物院南部院區' })];
+  const pool = [attr({ id: 'Attraction_T_GG', name: '故宮博物院-南部院區', city: '嘉義縣', town: '太保市', lat: 23.4722, lng: 120.2917, images: [{ Name: '南院', URL: 'https://example.test/nanyuan.jpg' }] })];
+  const { list } = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG });
+  const l1 = list.find((a) => a.layer === 1);
+  assert.equal(l1.id, 'Attraction_T_GG');
+  assert.deepEqual(l1.image, { url: 'https://example.test/nanyuan.jpg', name: '南院' });
+  assert.equal(l1.name, '國立故宮博物院南部院區'); // 名稱、座標照原本的
+  assert.equal(l1.lat, 23.4720);
+  assert.equal(list.length, 1);
+});
+
+test('D-2 名字包含但超過 0.3 公里：不併，兩筆都在', () => {
+  const top = [l1spot({ name: '國立故宮博物院南部院區' })];
+  const pool = [attr({ id: 'Attraction_T_FAR', name: '故宮博物院-南部院區', city: '嘉義縣', town: '太保市', lat: north(23.4720, 0.4), lng: 120.2915 })];
+  const { list } = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG });
+  assert.equal(list.find((a) => a.layer === 1).image, null);
+  assert.ok([3, 4].includes(layerOf(list, 'Attraction_T_FAR')));
+});
+
+test('D-3 比較短的名字不到 4 個字（例如「安平」）：不併', () => {
+  const top = [l1spot({ name: '安平', county: '台南市', town: '安平區', lat: 23.0015, lng: 120.1606 })];
+  const pool = [attr({ id: 'Attraction_T_AP', name: '安平樹屋', city: '臺南市', town: '安平區', lat: 23.0016, lng: 120.1607 })];
+  const { list } = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG });
+  assert.equal(list.find((a) => a.layer === 1).image, null);
+  assert.ok([3, 4].includes(layerOf(list, 'Attraction_T_AP')));
+});
+
+test('D-4 「仔」「子」不同字、名字在括號裡也對得到（蚵仔寮漁港 ↔ 潮旅梓官（蚵子寮漁港））', () => {
+  const top = [l1spot({ name: '蚵仔寮漁港', county: '高雄市', town: '梓官區', lat: 22.7270, lng: 120.2440, setting: '戶外' })];
+  const pool = [attr({ id: 'Attraction_T_KZ', name: '潮旅梓官（蚵子寮漁港）', city: '高雄市', town: '梓官區', lat: 22.7275, lng: 120.2443 })];
+  const { list } = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG });
+  assert.equal(list.find((a) => a.layer === 1).id, 'Attraction_T_KZ');
+  assert.equal(list.length, 1);
+});
+
+test('D-5 第 1 層已經有照片（名字完全一樣併過）：照片不換，另一筆重複的從第 2–4 層消失', () => {
+  const top = [l1spot({ name: '檜意森活村', county: '嘉義市', town: '東區', lat: 23.4870, lng: 120.4520, setting: '戶外' })];
+  const pool = [
+    attr({ id: 'Attraction_T_HY1', name: '檜意森活村', city: '嘉義市', town: '東區', lat: 23.4871, lng: 120.4521, images: [{ Name: '原本', URL: 'https://example.test/hy1.jpg' }] }),
+    attr({ id: 'Attraction_T_HY2', name: '阿里山林業村暨檜意森活村', city: '嘉義市', town: '東區', lat: 23.4872, lng: 120.4522, images: [{ Name: '另一張', URL: 'https://example.test/hy2.jpg' }] }),
+    attr({ id: 'Attraction_T_OTHER', name: '嘉義公園', city: '嘉義市', town: '東區', lat: 23.4800, lng: 120.4600 }),
+  ];
+  const { list, stats } = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG });
+  const l1 = list.find((a) => a.layer === 1);
+  assert.equal(l1.id, 'Attraction_T_HY1');
+  assert.equal(l1.image.url, 'https://example.test/hy1.jpg');
+  assert.equal(layerOf(list, 'Attraction_T_HY2'), undefined);
+  assert.ok([3, 4].includes(layerOf(list, 'Attraction_T_OTHER')));
+  assert.equal(stats.layer1Duplicates, 1);
+});
+
+test('D-6 對照表（data/layer1-aliases.csv）的那一筆會併進來；repo 裡的對照表有林口三井Outlet', () => {
+  const top = [l1spot({ name: '林口三井Outlet', county: '新北市', town: '林口區', lat: 25.0703, lng: 121.3654, setting: '室內' })];
+  const pool = [
+    attr({ id: 'Attraction_T_MO', name: 'Mitsui Outlet Park 林口', city: '新北市', town: '林口區', lat: 25.0710, lng: 121.3660, images: [{ Name: 'Outlet', URL: 'https://example.test/mo.jpg' }] }),
+    attr({ id: 'Attraction_T_LIB', name: '新北市立圖書館林口分館', city: '新北市', town: '林口區', lat: 25.0712, lng: 121.3662 }),
+  ];
+  const aliases = [{ name: '林口三井Outlet', id: 'Attraction_T_MO' }];
+  const { list } = buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG, aliases });
+  assert.equal(list.find((a) => a.layer === 1).id, 'Attraction_T_MO');
+  assert.ok([3, 4].includes(layerOf(list, 'Attraction_T_LIB'))); // 附近但不是同一個地點，照常留著
+  // 沒給對照表時不會亂併
+  assert.equal(buildAttractions({ attractions: pool, visitors: [], top, config: CONFIG }).list.find((a) => a.layer === 1).image, null);
+  const rows = parseCsv(fs.readFileSync(path.join(root, 'data', 'layer1-aliases.csv'), 'utf8'));
+  assert.deepEqual(rows[0], ['第 1 層名稱', '景點 ID']);
+  assert.ok(rows.some((r) => r[0] === '林口三井Outlet' && r[1] === 'Attraction_382000000A_403309'));
+});
+
+test('D-7 真的 data/attractions.json：卡片列的 8 組重複都已經併掉，第 1 層沒照片的剩 20 個', () => {
+  const list = JSON.parse(fs.readFileSync(path.join(root, 'data', 'attractions.json'), 'utf8'));
+  const dupNames = ['彰化：台灣玻璃館', '阿里山林業村暨檜意森活村', '故宮博物院-南部院區', '土城正統鹿耳門聖母廟', '南鯤鯓代天府(大鯤園)', '潮旅梓官（蚵子寮漁港）', '西嶼西臺', 'Mitsui Outlet Park 林口'];
+  for (const n of dupNames) assert.ok(!list.some((a) => a.layer !== 1 && a.name === n), `${n} 還在第 2–4 層`);
+  const l1 = list.filter((a) => a.layer === 1);
+  assert.equal(l1.length, 190);
+  assert.equal(l1.filter((a) => !a.image).length, 20);
+  assert.equal(new Set(list.map((a) => a.id)).size, list.length);
+});
