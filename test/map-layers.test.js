@@ -376,17 +376,30 @@ test('L-24 還沒拉到最近時，疊在一起的點照舊是點了拉近', asy
 });
 
 for (const narrow of [false, true]) {
-  test(`L-25 詳細資料晚到（${narrow ? '手機' : '桌機'}）：只換資訊框裡的內容，不重新打開、不移動地圖`, async () => {
+  test(`L-25 詳細資料晚到（${narrow ? '手機' : '桌機'}）：使用者已經拖動或縮放地圖，就只換內容、不移動地圖`, async () => {
     const attractions = [place({ id: 'A1', name: '一層', layer: 1, lat: 25.04, lng: 121.50, setting: '戶外', visitors: 1 })];
     const details = { A1: { image: null, excerpt: '晚到的描述', website: '' } };
     const { els, rec } = await runPage(forecast, { attractions, details, preload: false, narrow });
     rec.markers[0].handlers.click();
+    rec.mapOn.dragstart(); // 使用者把地圖拖走
     const opened = rec.calls.filter((c) => c === 'openPopup' || c === 'panInside').length;
     for (let i = 0; i < 5; i++) await tick();
     assert.equal(rec.calls.filter((c) => c === 'openPopup' || c === 'panInside').length, opened, rec.calls.join(','));
     const html = narrow ? els.sheetBody.innerHTML : rec.popupHtml;
     assert.match(html, /晚到的描述/);
     if (!narrow) assert.equal(rec.popupAutoPan, false, '換內容時不自動移動地圖');
+  });
+
+  test(`L-25b 詳細資料晚到（${narrow ? '手機' : '桌機'}）：使用者沒動過地圖，照片撐高資訊框後照常把選到的點移到看得見的地方`, async () => {
+    const attractions = [place({ id: 'A1', name: '一層', layer: 1, lat: 25.04, lng: 121.50, setting: '戶外', visitors: 1 })];
+    const details = { A1: { image: { url: 'https://example.test/a.jpg', name: '照片' }, excerpt: '晚到的描述', website: '' } };
+    const { rec } = await runPage(forecast, { attractions, details, preload: false, narrow });
+    rec.markers[0].handlers.click();
+    const pans = rec.calls.filter((c) => c === 'panInside').length;
+    for (let i = 0; i < 5; i++) await tick();
+    if (narrow) assert.equal(rec.calls.filter((c) => c === 'panInside').length, pans + 1);
+    else assert.notEqual(rec.popupAutoPan, false);
+    assert.equal(rec.calls.filter((c) => c === 'openPopup').length, narrow ? 0 : 1, '不重新打開');
   });
 }
 
@@ -401,4 +414,71 @@ test('L-26 點合併的點拉近：避開左上的面板（跟一開始對準全
     const o = rec.lastFitOpts || {};
     assert.ok(Array.isArray(o.paddingTopLeft) && Array.isArray(o.paddingBottomRight), JSON.stringify(o));
   }
+});
+
+// ---- 第三輪檢查找到的問題（2026-11-28） ----
+
+test('L-27 手機底部面板的關閉鈕樣式只套在關閉鈕，不會套到名單的按鈕', () => {
+  assert.doesNotMatch(html, /\.sheet button\s*\{[^}]*position:\s*absolute/);
+  assert.match(html, /#sheetClose\s*\{[^}]*position:\s*absolute/);
+});
+
+const stack = [
+  place({ id: 'H1', name: '慈湖', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
+  place({ id: 'H2', name: '慈湖陵寢', layer: 4, lat: 24.84037, lng: 121.29427, types: ['古蹟文化'] }),
+];
+const pick = (rec, id) => rec.docOn.click({ target: { closest: (sel) => (sel === '[data-pick]' ? { dataset: { pick: id } } : null) } });
+
+test('L-28 拉到最近從名單選了一個：疊在一起的點照樣是一個合併點（標成選到），點它再列名單，另一個不會被蓋住', async () => {
+  const { rec } = await runPage(forecast, { attractions: stack, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 17.5 });
+  rec.markers[0].handlers.click();
+  pick(rec, 'H2');
+  assert.match(rec.popupHtml, /<div class="name">慈湖陵寢/);
+  assert.equal(rec.markers.length, 1, rec.markers.map((m) => m.opts.title).join('、'));
+  assert.match(rec.markers[0].opts.icon.html, /cluster[^"]* sel/);
+  rec.markers[0].handlers.click();
+  assert.match(rec.popupHtml, /data-pick="H1"/);
+  assert.match(rec.popupHtml, /data-pick="H2"/);
+});
+
+test('L-29 名單開著時篩選或縮小地圖、名單裡的景點不再顯示：名單收起來', async () => {
+  for (const change of ['filter', 'zoom']) {
+    const { els, rec } = await runPage(forecast, { attractions: stack, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 17.5 });
+    rec.markers[0].handlers.click();
+    assert.match(rec.popupHtml, /這裡有 2 個景點/);
+    rec.calls.length = 0;
+    if (change === 'filter') {
+      els.onlyGood.checked = false;
+      const box = els.typeFilters.children.map((l) => l.children[0]).find((b) => b.value === '古蹟文化');
+      box.checked = false;
+      box.onchange();
+    } else {
+      rec.map.zoom = 12; // 第 4 層不畫
+      rec.mapOn.moveend();
+    }
+    assert.ok(rec.calls.includes('closePopup'), `${change}：名單沒有收起來`);
+  }
+});
+
+test('L-30 資訊框開著時點別的點：Leaflet 先關資訊框再送點擊，這一下就要打開新的點（不能被重畫吃掉）', async () => {
+  const attractions = [
+    place({ id: 'A', name: '甲', layer: 1, lat: 25.0, lng: 121.5, setting: '戶外', visitors: 1 }),
+    place({ id: 'B', name: '乙', layer: 1, lat: 23.0, lng: 120.2, setting: '戶外', visitors: 1 }),
+  ];
+  const { rec } = await runPage(forecast, { attractions });
+  rec.markers.find((m) => m.opts.title.startsWith('甲')).handlers.click();
+  // 點乙：同一次點擊裡先關掉資訊框（popupclose），再送到乙的標記
+  const b = rec.markers.find((m) => m.opts.title.startsWith('乙'));
+  rec.mapOn.popupclose();
+  b.handlers.click();
+  await tick();
+  assert.match(rec.popupHtml, /<div class="name">乙/);
+  assert.ok(rec.markers.some((m) => m.opts.title.startsWith('乙') && /sel/.test(m.opts.icon.html)), '乙標成選到');
+});
+
+test('L-31 手機：底部面板最高佔畫面 38%、超過就捲動，縮圖矮一點；上面的面板加底部面板不能蓋滿整個地圖', () => {
+  const phone = html.slice(html.indexOf('@media (max-width: 599px)'));
+  const block = phone.slice(0, phone.indexOf('\n  }\n') + 4);
+  assert.match(block, /\.sheet\s*\{[^}]*max-height:\s*38%[^}]*overflow-y:\s*auto/);
+  assert.match(block, /\.detail \.thumb\s*\{[^}]*height:\s*96px/);
 });

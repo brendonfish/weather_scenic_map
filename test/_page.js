@@ -63,7 +63,8 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
     latLngToContainerPoint([lat, lng]) { const k = 256 * 2 ** map.zoom / 360; return { x: lng * k, y: -lat * k }; },
   };
   rec.map = map;
-  const layer = { addTo: () => layer, clearLayers() { rec.markers = []; } };
+  // 跟真的 Leaflet 一樣：從地圖拿掉的標記收不到點擊
+  const layer = { addTo: () => layer, clearLayers() { rec.markers.forEach((m) => { m.removed = true; }); rec.markers = []; } };
   const L = {
     map: (id, opts) => { rec.mapOpts = opts; map.loaded = Boolean(opts && opts.center && opts.zoom !== undefined); return map; },
     control: { zoom: () => ({ addTo() {} }) },
@@ -71,7 +72,7 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
     layerGroup: () => layer,
     divIcon: (o) => o,
     marker(latlng, opts) {
-      const m = { latlng, opts, handlers: {}, on(ev, fn) { m.handlers[ev] = fn; return m; }, addTo() { rec.markers.push(m); return m; } };
+      const m = { latlng, opts, handlers: {}, on(ev, fn) { m.handlers[ev] = (...a) => (m.removed ? undefined : fn(...a)); return m; }, addTo() { rec.markers.push(m); return m; } };
       return m;
     },
     popup() {
