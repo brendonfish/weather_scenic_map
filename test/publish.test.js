@@ -146,3 +146,10 @@ test('P-7 build-site.sh 產出的 index.html：<head> 裡有 GA4 追蹤碼 G-TM7
     assert.ok(head.indexOf('G-TM7NLQ9HVG') < head.indexOf('<title>'), '追蹤碼要放在 <head> 前段');
   });
 });
+
+// Ray 2026-11-27 在對話裡決定：網頁顯示的名稱改成「天氣旅圖」（資料夾、repo、網址不改）
+test('P-8 網頁名稱是「天氣旅圖」：<title> 和頁首 <h1> 都是，舊名稱不再出現在網頁上', () => {
+  assert.match(html, /<title>天氣旅圖<\/title>/);
+  assert.match(html, /<h1>天氣旅圖<\/h1>/);
+  assert.doesNotMatch(html, /旅遊天氣景點地圖/);
+});
