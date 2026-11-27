@@ -85,7 +85,7 @@ ssh -i $K $H 'sudo install -m 755 /tmp/sync.sh /usr/local/bin/weatherway-sync &&
 ## 景點資料（觀光署）
 
 景點檔是 `data/attractions.json`（commit 在 repo 裡），來源是交通部觀光署的「景點資料庫」和「歷年國內主要觀光遊憩據點遊客人數月別統計」（政府資料開放授權條款第 1 版）。
-**它不會自動更新**：每日排程和 GitHub Actions 只更新天氣預報，不下載景點資料。網頁目前只畫第 1 層（原本的 190 個熱門景點）。
+**它不會自動更新**：每日排程和 GitHub Actions 只更新天氣預報，不下載景點資料。網頁依縮放畫第 1–4 層：全台只畫第 1 層，縮放到 9、11、13 級時依序加上第 2、3、4 層（設定在 `lib/map-layers.js` 的 `DEFAULTS`）。
 
 每一筆有：名稱、座標、縣市、鄉鎮、`layer`（1–4 層）、`types`（類型，第一個是主要類型）、`weatherFit`（好天氣才去／雨天備案／不分）、`richness`（資料豐富度 0–6）、`image`（第一張照片的網址和名稱）、`excerpt`（描述前 60 字）、`website`。規則寫在 `lib/attractions.js` 的註解。
 
