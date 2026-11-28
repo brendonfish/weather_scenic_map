@@ -201,7 +201,9 @@ test('L-12 資訊框：縮圖（固定寬度、延遲載入、載不到改顯示
   const two = open('二層');
   assert.match(two, /二層的描述/);
   assert.match(two, /自然山林/);
-  assert.match(two, /好天氣才去/);
+  // 卡片 cOvyB6XP：標籤顯示新名稱（資料的值還是「好天氣才去」）
+  assert.match(two, /<span>戶外<\/span>/);
+  assert.doesNotMatch(two, /好天氣才去/);
   assert.match(two, /<a [^>]*href="https:\/\/example\.test\/"[^>]*target="_blank"[^>]*>官方網站<\/a>/);
   assert.doesNotMatch(two, /遊客/);
   assert.ok(els);
@@ -832,4 +834,30 @@ test('X-3 底部面板用 display: flex 時，hidden 還是要藏得起來', () 
   if (/display:\s*flex/.test(rule(css, '.sheet') || '')) {
     assert.match(html, /\.sheet\[hidden\]\s*\{[^}]*display:\s*none/);
   }
+});
+
+// ---- 卡片 https://trello.com/c/cOvyB6XP ：篩選選項改名（Ray 2026-11-28） ----
+
+test('R-1 天氣適配的名稱：好天氣才去→戶外、雨天備案→室內、不分→室內戶外都有（資料的值不變）', () => {
+  assert.deepEqual([...ML.FITS], ['好天氣才去', '雨天備案', '不分']);
+  assert.deepEqual({ ...ML.FIT_LABELS }, { 好天氣才去: '戶外', 雨天備案: '室內', 不分: '室內戶外都有' });
+});
+
+test('R-2 篩選面板的天氣適配勾選框顯示新名稱，值還是資料裡的舊值（篩選照舊）', async () => {
+  const { els, rec } = await runPage(forecast, { attractions: [
+    place({ id: 'O1', name: '戶外一', layer: 1, lat: 25.0, lng: 121.5, weatherFit: '好天氣才去' }),
+    place({ id: 'I1', name: '室內一', layer: 1, lat: 24.0, lng: 121.0, weatherFit: '雨天備案' }),
+  ] });
+  const labels = els.fitFilters.children;
+  assert.deepEqual(labels.map((l) => l.children[1].textContent), ['戶外', '室內', '室內戶外都有']);
+  assert.deepEqual(labels.map((l) => l.children[0].value), ['好天氣才去', '雨天備案', '不分']);
+  labels[0].children[0].checked = false; // 取消「戶外」
+  labels[0].children[0].onchange();
+  assert.deepEqual(rec.markers.map((m) => m.opts.title.split('：')[0]), ['室內一']);
+});
+
+test('R-3 「只看好天氣」改成「只留好天氣景點」、「只看戶外景點」改成「只留戶外景點」，括號說明保留', () => {
+  assert.match(html, /id="onlyGood"> 只留好天氣景點（選定那天是綠色的）<\/label>/);
+  assert.match(html, /id="hideIndoor"> 只留戶外景點（隱藏室內、商圈、夜市、老街）<\/label>/);
+  assert.doesNotMatch(html, /只看好天氣|只看戶外景點/);
 });

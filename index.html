@@ -257,8 +257,8 @@
     <p class="group">天氣適配</p>
     <div class="opts" id="fitFilters"></div>
     <div class="opts">
-      <label class="wide"><input type="checkbox" id="onlyGood"> 只看好天氣（選定那天是綠色的）</label>
-      <label class="wide"><input type="checkbox" id="hideIndoor"> 只看戶外景點（隱藏室內、商圈、夜市、老街）</label>
+      <label class="wide"><input type="checkbox" id="onlyGood"> 只留好天氣景點（選定那天是綠色的）</label>
+      <label class="wide"><input type="checkbox" id="hideIndoor"> 只留戶外景點（隱藏室內、商圈、夜市、老街）</label>
     </div>
   </details>
 </div>
@@ -340,7 +340,7 @@
       input.onchange = () => render();
       label.appendChild(input);
       const text = document.createElement('span');
-      text.textContent = (containerId === 'typeFilters' ? MapLayers.typeIcon(name) + ' ' : '') + name;
+      text.textContent = containerId === 'typeFilters' ? MapLayers.typeIcon(name) + ' ' + name : MapLayers.FIT_LABELS[name] || name;
       label.appendChild(text);
       $(containerId).appendChild(label);
       return input;
@@ -427,7 +427,7 @@
     const minutes = origin ? minutesTo(s.county, s.name) : undefined;
     if (minutes !== undefined) html += `<div class="when">${esc(DriveTime.durationText(origin.county + origin.town, minutes))}</div>`;
     if (more.excerpt) html += `<div class="excerpt">${esc(more.excerpt)}</div>`;
-    const tags = [...types, s.weatherFit].filter(Boolean);
+    const tags = [...types, MapLayers.FIT_LABELS[s.weatherFit] || s.weatherFit].filter(Boolean);
     if (tags.length) html += '<div class="tags">' + tags.map((t) => `<span>${esc(t)}</span>`).join('') + '</div>';
     // 2025 遊客人次只有第 1 層（原本的熱門景點）有
     const meta = [esc(s.county) + esc(s.town), s.setting ? esc(s.setting) : '',
