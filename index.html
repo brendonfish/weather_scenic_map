@@ -178,7 +178,10 @@
     .trip select, .trip #useLocation { font-size: 16px; padding: 0 4px; }
     #search { font-size: 16px; }
     /* 上面的面板加底部面板不能蓋滿整個地圖，選到的點才看得到：底部面板最高 38%、超過就捲動，縮圖矮一點 */
-    .sheet { max-height: 38%; overflow-y: auto; }
+    /* 捲動放在內容 #sheetBody，關閉鈕留在 #sheet 右上角，捲動時不動 */
+    .sheet { max-height: 38%; display: flex; flex-direction: column; }
+    .sheet[hidden] { display: none; }
+    #sheetBody { overflow-y: auto; min-height: 0; }
     .detail .thumb { height: 96px; }
     .detail .thumb-icon { height: 56px; }
     /* 名單只在底部面板捲動一層 */
@@ -429,7 +432,7 @@
       popup = null;
       $('sheetBody').innerHTML = html;
       $('sheet').hidden = false;
-      $('sheet').scrollTop = 0; // 換內容從最上面開始（名單捲到下面再點名字時，「回到名單」才看得到）
+      $('sheetBody').scrollTop = 0; // 換內容從最上面開始（名單捲到下面再點名字時，「回到名單」才看得到）
       const h = $('sheet').offsetHeight;
       document.documentElement.style.setProperty('--sheet-h', h + 'px');
       map.panInside(at, sheetPad(h));
