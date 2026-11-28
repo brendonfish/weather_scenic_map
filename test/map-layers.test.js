@@ -490,7 +490,9 @@ test('L-30 資訊框開著時點別的點：Leaflet 先關資訊框再送點擊�
 test('L-31 手機：底部面板最高佔畫面 38%、超過就捲動，縮圖矮一點；上面的面板加底部面板不能蓋滿整個地圖', () => {
   const phone = html.slice(html.indexOf('@media (max-width: 599px)'));
   const block = phone.slice(0, phone.indexOf('\n  }\n') + 4);
-  assert.match(block, /\.sheet\s*\{[^}]*max-height:\s*38%[^}]*overflow-y:\s*auto/);
+  // 卡片 n28aWi9j：捲動從 .sheet 移到 #sheetBody（關閉鈕才不會跟著捲走）
+  assert.match(block, /\.sheet\s*\{[^}]*max-height:\s*38%/);
+  assert.match(block, /#sheetBody\s*\{[^}]*overflow-y:\s*auto/);
   assert.match(block, /\.detail \.thumb\s*\{[^}]*height:\s*96px/);
 });
 
@@ -641,12 +643,13 @@ test('L-42 點進景點後把地圖拉近或拖走，名單裡有景點不在畫
 test('L-43 手機：名單往下捲再點名字，打開的景點資訊從最上面開始（看得到「回到名單」）', async () => {
   const { els, rec } = await runPage(forecast, { attractions: trio, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 12, narrow: true });
   rec.markers[0].handlers.click();
-  els.sheet.scrollTop = 500;
+  // 卡片 n28aWi9j 以後捲動的是 #sheetBody（關閉鈕才不會跟著捲走）
+  els.sheetBody.scrollTop = 500;
   pick(rec, 'H3');
-  assert.equal(els.sheet.scrollTop, 0);
-  els.sheet.scrollTop = 300;
+  assert.equal(els.sheetBody.scrollTop, 0);
+  els.sheetBody.scrollTop = 300;
   back(rec);
-  assert.equal(els.sheet.scrollTop, 0, '回到名單也從最上面開始');
+  assert.equal(els.sheetBody.scrollTop, 0, '回到名單也從最上面開始');
 });
 
 // ---- 卡片 https://trello.com/c/zdHhqzYa ：用關鍵字搜尋景點（Ray 2026-11-28：照建議做） ----
@@ -791,4 +794,42 @@ test('S-12 拖動地圖時結果清單內容沒變就不換（鍵盤焦點才不
   assert.equal(writes, 0);
   typeSearch(els, '北投');
   assert.equal(writes, 1);
+});
+
+// ---- 卡片 https://trello.com/c/n28aWi9j ：手機底部景點卡片的關閉鈕固定在右上角（Ray 2026-11-28） ----
+
+const phoneCss = () => {
+  const start = html.indexOf('@media (max-width: 599px) {');
+  assert.ok(start > 0, '找不到手機版 CSS');
+  return html.slice(start, html.indexOf('\n  }\n', start));
+};
+const rule = (css, sel) => {
+  const m = css.match(new RegExp('(^|\\n)\\s*' + sel.replace(/[.#[\]]/g, (c) => '\\' + c) + '\\s*\\{([^}]*)\\}'));
+  return m ? m[2] : null;
+};
+
+test('X-1 手機：底部面板本身不捲動，捲動的是內容 #sheetBody（關閉鈕才不會跟著捲走）', () => {
+  const css = phoneCss();
+  const sheet = rule(css, '.sheet');
+  assert.ok(sheet, '手機版要有 .sheet 規則');
+  assert.match(sheet, /max-height:\s*38%/, '面板最高 38% 不變');
+  assert.doesNotMatch(sheet, /overflow/, '.sheet 不可以捲動');
+  const body = rule(css, '#sheetBody');
+  assert.ok(body, '手機版要有 #sheetBody 規則');
+  assert.match(body, /overflow-y:\s*auto/);
+  assert.match(body, /min-height:\s*0/, '彈性排版裡要 min-height: 0 才捲得動');
+});
+
+test('X-2 關閉鈕直接放在 #sheet 裡，不在 #sheetBody 裡（捲動的元素裡面）', () => {
+  const m = html.match(/<div class="sheet" id="sheet" hidden>([\s\S]*?)<div id="sheetBody"><\/div>\s*<\/div>/);
+  assert.ok(m, '底部面板的結構變了');
+  assert.match(m[1], /id="sheetClose"/);
+  assert.match(rule(html, '#sheetClose') || '', /position:\s*absolute/);
+});
+
+test('X-3 底部面板用 display: flex 時，hidden 還是要藏得起來', () => {
+  const css = phoneCss();
+  if (/display:\s*flex/.test(rule(css, '.sheet') || '')) {
+    assert.match(html, /\.sheet\[hidden\]\s*\{[^}]*display:\s*none/);
+  }
 });
