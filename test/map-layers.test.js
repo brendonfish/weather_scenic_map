@@ -303,24 +303,20 @@ test('L-19 官方網站只接受 http、https 開頭的網址（擋 javascript: 
   assert.match(rec.popupHtml, /href="http:\/\/example\.test\/"[^>]*>官方網站/);
 });
 
-test('L-20 選到的景點在合併的點裡：它自己單獨畫，其他景點照樣留在合併的點（數字少 1）', async () => {
-  const attractions = [
-    place({ id: 'A', name: '甲', layer: 1, lat: 25.0, lng: 121.5, setting: '戶外', visitors: 1, richness: 6 }),
-    place({ id: 'B', name: '乙', layer: 1, lat: 25.0001, lng: 121.5001, setting: '戶外', visitors: 1, richness: 1 }),
-    place({ id: 'C', name: '丙', layer: 1, lat: 25.0002, lng: 121.5002, setting: '戶外', visitors: 1, richness: 0 }),
-  ];
-  // 拉到最近（不合併），點乙，再縮小到會合併的級數
+test('L-20 選到的景點在「點了拉近看」的合併點裡（超過 10 個）：它自己單獨畫，其他景點照樣留在合併的點（數字少 1）', async () => {
+  // 2026-11-28 改：10 個以下的合併點改成點了列名單、選到也不拆（L-33），所以這裡用 12 個
+  const attractions = crowd(12);
   const { els, rec } = await runPage(forecast, { attractions, mapConfig: { cap: 30, clusterPx: 40 }, zoom: 17.5 });
-  assert.equal(rec.markers.length, 3);
-  rec.markers.find((m) => m.opts.title.startsWith('乙')).handlers.click();
+  rec.markers.find((m) => m.opts.title.startsWith('擠5')).handlers.click();
   rec.map.zoom = 8;
   rec.mapOn.moveend();
   const titles = rec.markers.map((m) => m.opts.title);
   assert.equal(rec.markers.length, 2, titles.join('、'));
-  assert.ok(titles.some((t) => t.startsWith('乙')), '選到的乙單獨畫');
+  assert.ok(titles.some((t) => t.startsWith('擠5')), '選到的單獨畫');
   const cluster = rec.markers.find((m) => /cluster/.test(m.opts.icon.html));
-  assert.match(cluster.opts.icon.html, />2</);
-  assert.match(els.info.textContent, /顯示 3 \/ 3 個景點/);
+  assert.match(cluster.opts.icon.html, />11</);
+  assert.match(cluster.opts.title, /點了拉近看/);
+  assert.match(els.info.textContent, /顯示 12 \/ 12 個景點/);
 });
 
 test('L-21 選到的景點被畫面上限擠掉時：還是畫出來（資訊框開著，地圖上就要有那個點）', async () => {
@@ -496,4 +492,31 @@ test('L-31 手機：底部面板最高佔畫面 38%、超過就捲動，縮圖�
   const block = phone.slice(0, phone.indexOf('\n  }\n') + 4);
   assert.match(block, /\.sheet\s*\{[^}]*max-height:\s*38%[^}]*overflow-y:\s*auto/);
   assert.match(block, /\.detail \.thumb\s*\{[^}]*height:\s*96px/);
+});
+
+// ---- 卡片 NcGEXBn9 檢查找到的問題（2026-11-28） ----
+
+test('L-33 「點了看名單」的合併點：從名單選了一個，不拆出來（座標一樣會蓋住其他的），合併點標成選到', async () => {
+  const { rec } = await runPage(forecast, { attractions: stack, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 16 });
+  assert.match(rec.markers[0].opts.title, /2 個景點：點了看名單/);
+  rec.markers[0].handlers.click();
+  pick(rec, 'H1');
+  assert.match(rec.popupHtml, /<div class="name">慈湖/);
+  assert.equal(rec.markers.length, 1, rec.markers.map((m) => m.opts.title).join('、'));
+  assert.match(rec.markers[0].opts.icon.html, /cluster[^"]* sel/);
+});
+
+test('L-34 拉近反而不會比較近（例如矮的手機螢幕，面板把空間吃光）：改成列名單，不縮小地圖', async () => {
+  const { rec } = await runPage(forecast, { attractions: crowd(12), mapConfig: { cap: 30, clusterPx: 36 }, zoom: 9, boundsZoom: 0 });
+  assert.match(rec.markers[0].opts.title, /12 個景點：點了看名單/);
+  rec.calls.length = 0;
+  rec.markers[0].handlers.click();
+  assert.ok(!rec.calls.includes('fitBounds'), rec.calls.join(','));
+  assert.equal((rec.popupHtml.match(/data-pick=/g) || []).length, 12);
+});
+
+test('L-35 手機：名單只在底部面板捲動一層，不在名單裡再捲一層', () => {
+  const phone = html.slice(html.indexOf('@media (max-width: 599px)'));
+  const block = phone.slice(0, phone.indexOf('\n  }\n') + 4);
+  assert.match(block, /\.sheet \.picklist\s*\{[^}]*max-height:\s*none/);
 });

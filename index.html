@@ -168,6 +168,8 @@
     .sheet { max-height: 38%; overflow-y: auto; }
     .detail .thumb { height: 96px; }
     .detail .thumb-icon { height: 56px; }
+    /* 名單只在底部面板捲動一層 */
+    .sheet .picklist { max-height: none; overflow: visible; }
   }
 </style>
 </head>
@@ -441,7 +443,26 @@
   // 已經拉到最近（不再一般合併的級數）：只合併座標疊在一起的，點了列名單
   const atMax = () => map.getZoom() >= map.getMaxZoom() - 1;
   // 點合併的點：景點少（listMax 以下）、或已經拉到鄉鎮尺度（zoomCap），就列名單；不然拉近
-  const listsOnClick = (members) => atMax() || members.length <= CFG.listMax || map.getZoom() >= CFG.zoomCap;
+  // 拉近到這幾個景點的範圍：跟一開始對準全台一樣避開左上的面板，拉近後的景點才不會被面板蓋住；最多拉到鄉鎮尺度
+  function zoomPlan(members) {
+    const lats = members.map((m) => m.lat);
+    const lngs = members.map((m) => m.lng);
+    const panel = $('days').parentNode;
+    const opts = {
+      paddingTopLeft: narrow() ? [40, panel.offsetHeight + 40] : [panel.offsetWidth + 40, 40],
+      paddingBottomRight: [40, 40],
+      maxZoom: CFG.zoomCap,
+    };
+    return { bounds: [[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]], opts };
+  }
+  // 拉近以後會是第幾級（螢幕很矮時面板把空間吃光，fitBounds 反而會縮小）
+  function zoomAfter(members) {
+    const { bounds, opts } = zoomPlan(members);
+    const pad = L.point(opts.paddingTopLeft[0] + opts.paddingBottomRight[0], opts.paddingTopLeft[1] + opts.paddingBottomRight[1]);
+    return Math.min(CFG.zoomCap, map.getBoundsZoom(L.latLngBounds(bounds), false, pad));
+  }
+  const listsOnClick = (members) => atMax() || members.length <= CFG.listMax || map.getZoom() >= CFG.zoomCap
+    || zoomAfter(members) <= map.getZoom();
 
   // 座標疊在一起、拉到最近也分不開的景點：列出名單，點名字打開那個景點
   let pickList = null; // 名單開著時是名單裡的景點
@@ -485,15 +506,8 @@
   // 合併的點：景點少或已經拉到鄉鎮尺度就列名單；不然拉近到這幾個景點的範圍（最多到鄉鎮尺度）
   function zoomInto(members) {
     if (listsOnClick(members)) return showPickList(members);
-    const lats = members.map((m) => m.lat);
-    const lngs = members.map((m) => m.lng);
-    // 跟一開始對準全台一樣避開左上的面板，拉近後的景點才不會被面板蓋住
-    const panel = $('days').parentNode;
-    map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]], {
-      paddingTopLeft: narrow() ? [40, panel.offsetHeight + 40] : [panel.offsetWidth + 40, 40],
-      paddingBottomRight: [40, 40],
-      maxZoom: CFG.zoomCap, // 最多拉到鄉鎮尺度，不拉到街道
-    });
+    const { bounds, opts } = zoomPlan(members);
+    map.fitBounds(bounds, opts);
   }
 
   function render() {
@@ -524,14 +538,14 @@
     const toPoint = (s) => map.latLngToContainerPoint([s.lat, s.lng]);
     const placed = MapLayers.place(inView, toPoint, { cap: CFG.cap, clusterPx: atMax() ? 1 : CFG.clusterPx });
     // 選到的景點一定畫出來：被畫面上限擠掉就補上；在合併的點裡就拆出來單獨畫，其他的照樣合併。
-    // 拉到最近時合併的點是座標疊在一起的，拆出來會蓋住其他的，所以不拆，合併的點標成選到，點它再列名單。
+    // 「點了看名單」的合併點不拆（座標可能疊在一起，拆出來會蓋住其他的），合併的點標成選到，點它再列名單。
     if (selected && inView.includes(selected) && !placed.groups.some((g) => g.members.includes(selected))) {
       placed.groups.push({ lead: selected, members: [selected] });
       placed.overflow--;
     }
     const groups = [];
     for (const g of placed.groups) {
-      if (g.members.length > 1 && g.members.includes(selected) && !atMax()) {
+      if (g.members.length > 1 && g.members.includes(selected) && !listsOnClick(g.members)) {
         groups.push({ lead: selected, members: [selected] });
         const rest = g.members.filter((m) => m !== selected);
         groups.push({ lead: rest[0], members: rest });
