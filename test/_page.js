@@ -32,14 +32,16 @@ function toTownFormat(data) {
 // geo：假的 navigator.geolocation.getCurrentPosition（沒給就當瀏覽器不支援定位）
 // zoom：假地圖的縮放級數；mapConfig：網頁的 MAP_CONFIG（沒給就不設上限、不合併，舊的測試照舊數得到每一個點）
 // details：點開才載入的景點詳細資料（public/attraction-details.js）；preload 為 false 時等網頁自己載入
-export async function runPage(input, { narrow = false, drive = null, storage = {}, geo = null, attractions: given, zoom = 8, mapConfig = { cap: Infinity, clusterPx: 0 }, details = {}, preload = true } = {}) {
+// boundsZoom：假地圖 fitBounds 會拉到第幾級（getBoundsZoom 的回傳值）；沒給就是比現在大 2 級
+// mapSize：假地圖的大小（像素）
+export async function runPage(input, { narrow = false, drive = null, storage = {}, geo = null, attractions: given, zoom = 8, mapConfig = { cap: Infinity, clusterPx: 0 }, details = {}, preload = true, boundsZoom = null, mapSize = { x: 1280, y: 800 }, panelSize = null } = {}) {
   const converted = given ? { forecast: input, attractions: given } : toTownFormat(input);
   const data = converted.forecast;
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const els = {};
   const el = () => ({
     textContent: '', innerHTML: '', value: '', checked: false, hidden: false, disabled: false, open: false, children: [], onclick: null, onchange: null,
-    offsetHeight: 0, offsetWidth: 0, parentNode: { offsetHeight: 0, offsetWidth: 0 },
+    offsetHeight: 0, offsetWidth: 0, parentNode: panelSize ? { offsetHeight: panelSize.y, offsetWidth: panelSize.x } : { offsetHeight: 0, offsetWidth: 0 },
     attrs: {}, listeners: {},
     setAttribute(k, v) { this.attrs[k] = v; },
     addEventListener(ev, fn) { this.listeners[ev] = fn; },
@@ -57,6 +59,8 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
     setView(c, z) { rec.calls.push('setView'); map.zoom = z; map.loaded = true; },
     getZoom: () => map.zoom,
     getMaxZoom: () => 18,
+    getBoundsZoom: () => (boundsZoom === null ? map.zoom + 2 : boundsZoom),
+    getSize: () => mapSize,
     // 假地圖：整個台灣都在畫面裡；投影用簡單的等距，1 度 ≈ 256 × 2^zoom / 360 像素
     // 跟真的 Leaflet 一樣：還沒設定中心和縮放就問範圍會丟錯
     getBounds() { if (!map.loaded) throw new Error('Set map center and zoom first.'); return { contains: () => true }; },
@@ -71,6 +75,8 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
     tileLayer: () => ({ addTo() {} }),
     layerGroup: () => layer,
     divIcon: (o) => o,
+    point: (x, y) => ({ x, y }),
+    latLngBounds: (b) => b,
     marker(latlng, opts) {
       const m = { latlng, opts, handlers: {}, on(ev, fn) { m.handlers[ev] = (...a) => (m.removed ? undefined : fn(...a)); return m; }, addTo() { rec.markers.push(m); return m; } };
       return m;
