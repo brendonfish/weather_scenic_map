@@ -328,7 +328,9 @@
     terms: MapLayers.parseQuery($('search').value),
   });
   // 搜尋框：打字就重畫；清除回到原本的樣子
-  $('search').oninput = () => render();
+  // 注音、倉頡組字還沒選字時不重畫（不然會先搜「ㄒ」，地圖清空、打開的景點被關掉）；選完字再畫
+  $('search').oninput = (e) => { if (!(e && e.isComposing)) render(); };
+  $('search').oncompositionend = () => render();
   $('searchClear').onclick = () => { $('search').value = ''; render(); };
 
   // 景點的照片、描述、網站在 public/attraction-details.js，第一次點開景點才載入（景點檔太大，拆開）
@@ -657,13 +659,15 @@
       DayLabels.updatedText(data.generatedAt);
     if (dropBack && selected) refreshDetail(true);
     // 搜尋結果清單：全台符合的，先層後資料豐富度，列前 20 個；點了把地圖移過去、打開那個景點
-    if (!filters.terms.length) $('searchResults').innerHTML = '';
-    else if (!visible.length) $('searchResults').innerHTML = '<p class="note">找不到符合的景點</p>';
-    else {
+    let results = '';
+    if (filters.terms.length && !visible.length) results = '<p class="note">找不到符合的景點</p>';
+    else if (filters.terms.length) {
       const top = MapLayers.rank(visible).slice(0, 20);
-      $('searchResults').innerHTML = '<p class="note">共 ' + visible.length + ' 個符合' + (visible.length > 20 ? '（列出前 20 個）' : '') + '</p>' +
+      results = '<p class="note">共 ' + visible.length + ' 個符合' + (visible.length > 20 ? '（列出前 20 個）' : '') + '</p>' +
         top.map((x) => '<button type="button" data-goto="' + esc(x.id) + '">' + esc(x.name) + ' <span>' + esc(x.county) + esc(x.town) + '</span></button>').join('');
     }
+    // 內容沒變就不換（拖動地圖時，停在結果按鈕上的鍵盤焦點才不會掉）
+    if ($('searchResults').innerHTML !== results) $('searchResults').innerHTML = results;
   }
 
   if (data.source === 'fixture') {

@@ -747,3 +747,48 @@ test('S-8 手機：從搜尋結果點景點，篩選面板收起來（地圖和�
   assert.equal(els.filters.open, false);
   assert.match(els.sheetBody.innerHTML, /<div class="name">行天宮北投分宮_忠義廟/);
 });
+
+// ---- 卡片 zdHhqzYa 檢查找到的問題（2026-11-28） ----
+
+test('S-9 名稱、縣市、鄉鎮分開比對：關鍵字不會跨欄位對到（「…平台」＋「南投縣」不算「台南」）', () => {
+  const s = { name: '九龍口大平台', county: '南投縣', town: '魚池鄉' };
+  assert.ok(!ML.matchesQuery(s, ML.parseQuery('台南')));
+  assert.ok(ML.matchesQuery(s, ML.parseQuery('平台 南投')));
+});
+
+test('S-10 全形英數、全形括號當成半形：搜「１０１」「ＳＯＧＯ」「（」也找得到', () => {
+  assert.ok(ML.matchesQuery({ name: '台北101', county: '臺北市', town: '信義區' }, ML.parseQuery('１０１')));
+  assert.ok(ML.matchesQuery({ name: 'SOGO百貨', county: '臺北市', town: '大安區' }, ML.parseQuery('ｓｏｇｏ')));
+  assert.ok(ML.matchesQuery({ name: '南鯤鯓代天府(大鯤園)', county: '臺南市', town: '北門區' }, ML.parseQuery('（大鯤園）')));
+});
+
+test('S-11 注音組字還沒選字時不重畫（不清掉地圖和打開的景點）；選完字才重畫', async () => {
+  const { els, rec } = await runPage(forecast, { attractions: temples, zoom: 7.5 });
+  rec.markers.find((m) => m.opts.title.startsWith('大安森林公園')).handlers.click();
+  assert.match(rec.popupHtml, /大安森林公園/);
+  const before = rec.markers;
+  els.search.value = 'ㄒ';
+  els.search.oninput({ isComposing: true });
+  assert.equal(rec.markers, before, '組字中重畫了');
+  assert.ok(!rec.calls.includes('closePopup'));
+  els.search.value = '行天宮';
+  els.search.oninput({ isComposing: false });
+  assert.deepEqual(markerNames(rec).sort(), ['行天宮', '行天宮北投分宮_忠義廟']);
+  // 有些瀏覽器選完字只送 compositionend
+  els.search.value = '北投';
+  els.search.oncompositionend();
+  assert.deepEqual(markerNames(rec), ['行天宮北投分宮_忠義廟']);
+});
+
+test('S-12 拖動地圖時結果清單內容沒變就不換（鍵盤焦點才不會掉）', async () => {
+  const { els, rec } = await runPage(forecast, { attractions: temples, zoom: 7.5 });
+  typeSearch(els, '行天宮');
+  let writes = 0;
+  let value = els.searchResults.innerHTML;
+  Object.defineProperty(els.searchResults, 'innerHTML', { get: () => value, set: (v) => { writes++; value = v; } });
+  rec.mapOn.moveend();
+  rec.mapOn.moveend();
+  assert.equal(writes, 0);
+  typeSearch(els, '北投');
+  assert.equal(writes, 1);
+});
