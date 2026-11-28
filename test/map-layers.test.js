@@ -648,3 +648,102 @@ test('L-43 手機：名單往下捲再點名字，打開的景點資訊從最上
   back(rec);
   assert.equal(els.sheet.scrollTop, 0, '回到名單也從最上面開始');
 });
+
+// ---- 卡片 https://trello.com/c/zdHhqzYa ：用關鍵字搜尋景點（Ray 2026-11-28：照建議做） ----
+
+test('S-1 比對前去掉空白、「臺」「台」當同一個字、大小寫不分；多個關鍵字用空白分開，全部都要符合', () => {
+  const s = { name: '行天宮北投分宮_忠義廟', county: '臺北市', town: '北投區' };
+  const ok = (q) => ML.matchesQuery(s, ML.parseQuery(q));
+  assert.ok(ok('行天宮'));
+  assert.ok(ok('台北 行天宮'));
+  assert.ok(ok('北投區 忠義'));
+  assert.ok(ok('行天宮　北投')); // 全形空白也算分隔
+  assert.ok(!ok('行天宮 中山'));
+  assert.ok(ML.matchesQuery({ name: 'Mitsui Outlet Park 林口', county: '新北市', town: '林口區' }, ML.parseQuery('outlet park')));
+  assert.deepEqual([...ML.parseQuery('  ')], []);
+});
+
+test('S-2 縣市、鄉鎮也搜得到', () => {
+  const s = { name: '某某公園', county: '高雄市', town: '鳳山區' };
+  assert.ok(ML.matchesQuery(s, ML.parseQuery('鳳山')));
+  assert.ok(ML.matchesQuery(s, ML.parseQuery('高雄 公園')));
+  assert.ok(!ML.matchesQuery(s, ML.parseQuery('台南')));
+});
+
+const temples = [
+  place({ id: 'T1', name: '行天宮', layer: 4, lat: 25.06308, lng: 121.5339, town: '中山區', types: ['宗教廟宇'] }),
+  place({ id: 'T2', name: '行天宮北投分宮_忠義廟', layer: 4, lat: 25.13701, lng: 121.47757, town: '北投區', types: ['宗教廟宇'] }),
+  place({ id: 'P1', name: '大安森林公園', layer: 1, lat: 25.0299, lng: 121.5362, town: '大安區', setting: '戶外', visitors: 1, types: ['公園運動'] }),
+];
+const typeSearch = (els, q) => { els.search.value = q; els.search.oninput(); };
+const markerNames = (rec) => rec.markers.map((m) => m.opts.title.split('：')[0]);
+
+test('S-3 搜尋時不管縮放級數：全台畫面也畫出符合的第 4 層景點；跟類型篩選一起用', async () => {
+  const { els, rec } = await runPage(forecast, { attractions: temples, zoom: 7.5 });
+  assert.deepEqual(markerNames(rec), ['大安森林公園']);
+  typeSearch(els, '行天宮');
+  assert.deepEqual(markerNames(rec).sort(), ['行天宮', '行天宮北投分宮_忠義廟']);
+  assert.equal(els.filtersTitle.textContent, '篩選景點（已篩選）');
+  // 跟類型一起用：只勾公園運動，行天宮都不符合
+  els.typeFilters.children.forEach((l) => { const b = l.children[0]; b.checked = b.value === '公園運動'; });
+  els.typeFilters.children[0].children[0].onchange();
+  assert.equal(rec.markers.length, 0);
+  assert.match(els.searchResults.innerHTML, /找不到符合的景點/);
+});
+
+test('S-4 搜尋結果清單：最多 20 個、先層後資料豐富度；點名字把地圖移過去並打開那個景點', async () => {
+  const many = Array.from({ length: 25 }, (_, i) => place({ id: 'G' + i, name: '公園' + i, layer: 1 + (i % 4), richness: i % 7, lat: 24 + i * 0.01, lng: 121, visitors: 1 }));
+  const { els, rec } = await runPage(forecast, { attractions: many, zoom: 7.5 });
+  typeSearch(els, '公園');
+  const ids = [...els.searchResults.innerHTML.matchAll(/data-goto="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(ids.length, 20);
+  const order = ids.map((id) => many.find((s) => s.id === id));
+  for (let i = 1; i < order.length; i++) {
+    const a = order[i - 1];
+    const b = order[i];
+    assert.ok(a.layer < b.layer || (a.layer === b.layer && a.richness >= b.richness), a.name + ' 應該排在 ' + b.name + ' 前面');
+  }
+  assert.match(els.searchResults.innerHTML, /共 25 個/);
+  rec.calls.length = 0;
+  rec.docOn.click({ target: { closest: (sel) => (sel === '[data-goto]' ? { dataset: { goto: 'G7' } } : null) } });
+  assert.ok(rec.calls.includes('setView'), rec.calls.join(','));
+  assert.match(rec.popupHtml, /<div class="name">公園7/);
+});
+
+test('S-5 清除：搜尋框清空，地圖回到原本只畫第 1 層的樣子，結果清單收起來', async () => {
+  const { els, rec } = await runPage(forecast, { attractions: temples, zoom: 7.5 });
+  typeSearch(els, '行天宮');
+  assert.equal(rec.markers.length, 2);
+  els.searchClear.onclick();
+  assert.equal(els.search.value, '');
+  assert.deepEqual(markerNames(rec), ['大安森林公園']);
+  assert.equal(els.searchResults.innerHTML, '');
+  assert.equal(els.filtersTitle.textContent, '篩選景點');
+});
+
+test('S-6 搜尋框在篩選面板最上面；手機字級 16px（iPhone 才不會自動放大）', () => {
+  const filters = html.slice(html.indexOf('id="filters"'), html.indexOf('</details>', html.indexOf('id="filters"')));
+  assert.ok(filters.indexOf('id="search"') > 0 && filters.indexOf('id="search"') < filters.indexOf('id="typeFilters"'));
+  assert.match(filters, /<input[^>]*type="search"[^>]*id="search"|<input[^>]*id="search"[^>]*type="search"/);
+  assert.match(filters, /id="searchClear"/);
+  assert.match(filters, /id="searchResults"/);
+  const phone = html.slice(html.indexOf('@media (max-width: 599px)'));
+  const block = phone.slice(0, phone.indexOf('\n  }\n') + 4);
+  assert.match(block, /#search\s*\{[^}]*font-size:\s*16px/);
+});
+
+test('S-7 有搜尋時，上面的摘要算搜到的景點（不只第 1 層），不會寫「沒有景點可以顯示」', async () => {
+  const { els } = await runPage(forecast, { attractions: temples, zoom: 7.5 });
+  typeSearch(els, '行天宮');
+  assert.doesNotMatch(els.summary.textContent, /沒有景點可以顯示/);
+  assert.match(els.summary.textContent, /2 個景點/);
+});
+
+test('S-8 手機：從搜尋結果點景點，篩選面板收起來（地圖和選到的點才看得到）', async () => {
+  const { els, rec } = await runPage(forecast, { attractions: temples, zoom: 7.5, narrow: true });
+  els.filters.open = true;
+  typeSearch(els, '北投');
+  rec.docOn.click({ target: { closest: (sel) => (sel === '[data-goto]' ? { dataset: { goto: 'T2' } } : null) } });
+  assert.equal(els.filters.open, false);
+  assert.match(els.sheetBody.innerHTML, /<div class="name">行天宮北投分宮_忠義廟/);
+});

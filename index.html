@@ -91,6 +91,15 @@
   .filters summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 14px; font-weight: 600; }
   .filters summary:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
   .filters .group { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
+  .searchbox { display: flex; gap: 6px; margin-top: 4px; }
+  #search { flex: 1; min-width: 0; min-height: 40px; padding: 0 8px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--ink); font: inherit; }
+  #searchClear { min-height: 40px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg);
+    color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+  #searchResults .note { margin: 6px 0 2px; }
+  #searchResults button { display: block; width: 100%; min-height: 36px; margin-top: 4px; padding: 0 8px; text-align: left;
+    border: 1px solid var(--hair); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+  #searchResults button span { color: var(--ink-2); }
   .filters .opts { display: grid; grid-template-columns: 1fr 1fr; column-gap: 8px; }
   .filters label { display: flex; align-items: center; gap: 6px; min-height: 36px; cursor: pointer; font-size: 13px; }
   .filters input { width: 18px; height: 18px; margin: 0; flex: none; }
@@ -167,6 +176,7 @@
     .trip #useLocation { grid-column: 1 / -1; }
     /* 16px 以下 iPhone 點選單時會自動放大整個畫面 */
     .trip select, .trip #useLocation { font-size: 16px; padding: 0 4px; }
+    #search { font-size: 16px; }
     /* 上面的面板加底部面板不能蓋滿整個地圖，選到的點才看得到：底部面板最高 38%、超過就捲動，縮圖矮一點 */
     .sheet { max-height: 38%; overflow-y: auto; }
     .detail .thumb { height: 96px; }
@@ -211,6 +221,11 @@
   </details>
   <details class="filters" id="filters">
     <summary id="filtersTitle">篩選景點</summary>
+    <div class="searchbox">
+      <input type="search" id="search" placeholder="搜尋景點名稱、縣市、鄉鎮" aria-label="搜尋景點" autocomplete="off">
+      <button type="button" id="searchClear" aria-label="清除搜尋">清除</button>
+    </div>
+    <div id="searchResults" aria-live="polite"></div>
     <p class="group">類型</p>
     <div class="opts" id="typeFilters"></div>
     <p class="group">天氣適配</p>
@@ -310,7 +325,11 @@
     fits: fitBoxes.filter((b) => b.checked).map((b) => b.value),
     onlyGood: $('onlyGood').checked,
     hideIndoor: $('hideIndoor').checked,
+    terms: MapLayers.parseQuery($('search').value),
   });
+  // 搜尋框：打字就重畫；清除回到原本的樣子
+  $('search').oninput = () => render();
+  $('searchClear').onclick = () => { $('search').value = ''; render(); };
 
   // 景點的照片、描述、網站在 public/attraction-details.js，第一次點開景點才載入（景點檔太大，拆開）
   // 只載一次：載不到（或檔案壞掉、沒有資料）就算了，資訊框照樣有天氣，只是沒有照片、描述
@@ -503,6 +522,20 @@
       showPickList(members);
       return;
     }
+    const g = closest('[data-goto]');
+    if (g) {
+      const s = data.spots.find((x) => x.id === g.dataset.goto);
+      if (!s) return;
+      backList = null;
+      pickList = null;
+      selected = s;
+      // 手機：篩選面板收起來，地圖和選到的點才看得到
+      if (narrow()) $('filters').open = false;
+      map.setView([s.lat, s.lng], Math.max(map.getZoom(), 15), { animate: false });
+      render();
+      showDetail();
+      return;
+    }
     const b = closest('[data-pick]');
     if (!b) return;
     const s = data.spots.find((x) => x.id === b.dataset.pick);
@@ -538,7 +571,8 @@
     $('filtersTitle').textContent = active ? '篩選景點（已篩選）' : '篩選景點';
     // 依縮放決定畫到第幾層；有打開篩選時放寬一級
     const zoom = map.getZoom();
-    const maxLayer = MapLayers.maxLayer(zoom, active, CFG);
+    // 有搜尋關鍵字時不管縮放級數，第 1–4 層符合的都畫（不然在全台畫面搜第 4 層的景點會搜不到）
+    const maxLayer = filters.terms.length ? 4 : MapLayers.maxLayer(zoom, active, CFG);
     const candidates = data.spots.filter((s) => s.layer <= maxLayer);
     const shown = MapLayers.applyFilters(candidates, filters, SpotView.colorOf, dayIndex);
     // 選了出發地又選了車程上限，才用車程篩；到不了的景點（例如離島）這時也拿掉。
@@ -603,8 +637,11 @@
         .addTo(layer);
     }
     // 摘要只算熱門景點（第 1 層），拖動、縮放地圖時不會跟著跳
-    const summary = SpotView.summarize(visible.filter((s) => s.layer === 1), dayIndex);
-    $('summary').textContent = drive ? DriveTime.summaryText(summary, driveLimit) : SpotView.summaryText(summary);
+    // 平常只算熱門景點（第 1 層），拖動、縮放時數字不會跳；有搜尋時算搜到的全部（搜到的可能都不在第 1 層）
+    const summary = SpotView.summarize(filters.terms.length ? visible : visible.filter((s) => s.layer === 1), dayIndex);
+    $('summary').textContent = drive ? DriveTime.summaryText(summary, driveLimit)
+      : filters.terms.length ? '搜到 ' + summary.total + ' 個景點' + (summary.green ? ' · ' + summary.green + ' 個不太會下雨' : '')
+      : SpotView.summaryText(summary);
     const noTime = drive ? shown.filter((s) => s.layer !== 1).length : 0;
     const driveNote = driveFailed ? '車程資料暫時讀不到，請稍後重新整理。'
       : [drive && drive.unreachable ? `有 ${drive.unreachable} 個景點開車到不了（例如離島），沒有列入。` : '',
@@ -619,6 +656,14 @@
       (placed.overflow ? `還有 ${placed.overflow} 個景點，拉近才看得到。` : '') +
       DayLabels.updatedText(data.generatedAt);
     if (dropBack && selected) refreshDetail(true);
+    // 搜尋結果清單：全台符合的，先層後資料豐富度，列前 20 個；點了把地圖移過去、打開那個景點
+    if (!filters.terms.length) $('searchResults').innerHTML = '';
+    else if (!visible.length) $('searchResults').innerHTML = '<p class="note">找不到符合的景點</p>';
+    else {
+      const top = MapLayers.rank(visible).slice(0, 20);
+      $('searchResults').innerHTML = '<p class="note">共 ' + visible.length + ' 個符合' + (visible.length > 20 ? '（列出前 20 個）' : '') + '</p>' +
+        top.map((x) => '<button type="button" data-goto="' + esc(x.id) + '">' + esc(x.name) + ' <span>' + esc(x.county) + esc(x.town) + '</span></button>').join('');
+    }
   }
 
   if (data.source === 'fixture') {
