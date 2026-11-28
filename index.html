@@ -459,6 +459,9 @@
   function zoomAfter(members) {
     const { bounds, opts } = zoomPlan(members);
     const pad = L.point(opts.paddingTopLeft[0] + opts.paddingBottomRight[0], opts.paddingTopLeft[1] + opts.paddingBottomRight[1]);
+    // 扣掉面板和留白沒有空間了：Leaflet 這時會算出最大級數，當成拉不近
+    const size = map.getSize();
+    if (size.x - pad.x <= 0 || size.y - pad.y <= 0) return map.getZoom();
     return Math.min(CFG.zoomCap, map.getBoundsZoom(L.latLngBounds(bounds), false, pad));
   }
   const listsOnClick = (members) => atMax() || members.length <= CFG.listMax || map.getZoom() >= CFG.zoomCap
@@ -718,6 +721,9 @@
   }
   $('sheetClose').onclick = () => { closeSheet(); unselect(); };
   map.on('popupclose', unselect);
+  // 打開或收起「圖例說明與設定」「篩選景點」：面板大小變了，合併點「拉近看／看名單」要重新判斷
+  $('more').ontoggle = () => render();
+  $('filters').ontoggle = () => render();
   // 使用者自己拖動或縮放（程式移動地圖不算）
   map.on('dragstart', () => { userMoved = true; });
   map.on('zoomstart', () => { if (!reopening) userMoved = true; });

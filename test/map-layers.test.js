@@ -520,3 +520,22 @@ test('L-35 手機：名單只在底部面板捲動一層，不在名單裡再捲
   const block = phone.slice(0, phone.indexOf('\n  }\n') + 4);
   assert.match(block, /\.sheet \.picklist\s*\{[^}]*max-height:\s*none/);
 });
+
+test('L-36 面板把地圖的空間吃光（扣掉面板和留白，可用高度不到 0）：合併點也列名單，不拉近', async () => {
+  // 手機 360×300：上面的面板 225 高，拉近要留的上下空白共 305，比地圖還高
+  const { rec } = await runPage(forecast, { attractions: crowd(12), mapConfig: { cap: 30, clusterPx: 36 }, zoom: 9, narrow: true, mapSize: { x: 360, y: 300 }, panelSize: { x: 360, y: 225 }, boundsZoom: 18 });
+  assert.match(rec.markers[0].opts.title, /12 個景點：點了看名單/);
+  rec.calls.length = 0;
+  rec.markers[0].handlers.click();
+  assert.ok(!rec.calls.includes('fitBounds'), rec.calls.join(','));
+});
+
+test('L-37 打開或收起「圖例說明與設定」「篩選景點」：重畫一次，合併點的提示文字跟著新的面板大小', async () => {
+  const { els, rec } = await runPage(forecast, { attractions: crowd(12), mapConfig: { cap: 30, clusterPx: 36 }, zoom: 9 });
+  for (const id of ['more', 'filters']) {
+    assert.equal(typeof els[id].ontoggle, 'function', id);
+    const before = rec.markers[0];
+    els[id].ontoggle();
+    assert.notEqual(rec.markers[0], before, `${id}：沒有重畫`);
+  }
+});
