@@ -333,3 +333,65 @@ test('D-20 用我的位置拿不到：講清楚原因，出發地不變；瀏覽
   const { els } = await runPage(data, { drive: fakeDrive(data) });
   assert.equal(els.useLocation.hidden, true);
 });
+
+// ---- 卡片 https://trello.com/c/vZpVF2ZB ：可以展開收起的區域加上箭頭；降雨機率說明、出發地與車程也可以收起（Ray 2026-11-28） ----
+
+const pageHtml = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const FOLDS = ['trip', 'legendBox', 'more', 'filters'];
+
+test('V-1 四個可以展開收起的區域都是 details，有標題列 summary', () => {
+  for (const id of FOLDS) {
+    assert.match(pageHtml, new RegExp('<details[^>]*id="' + id + '"[^>]*>\\s*<summary'), id);
+  }
+  // 降雨機率說明：標題列是那行說明，四個顏色收在裡面
+  assert.match(pageHtml, /<details[^>]*id="legendBox"[^>]*>\s*<summary[^>]*>白天最高降雨機率（09:00–18:00）<\/summary>[\s\S]*?c-green[\s\S]*?id="legendGray"[\s\S]*?<\/details>/);
+  // 出發地與車程：選單和「用我的位置」的說明都收在裡面
+  assert.match(pageHtml, /<details[^>]*id="trip"[^>]*>\s*<summary[^>]*>出發地與車程<span[^>]*id="tripState"[\s\S]*?id="originCounty"[\s\S]*?id="useLocation"[\s\S]*?id="locateNote"[\s\S]*?<\/details>/);
+});
+
+test('V-2 標題列有箭頭：收起朝右、打開朝下；瀏覽器原本的三角形藏起來（不會出現兩個）', () => {
+  const css = pageHtml.slice(pageHtml.indexOf('<style>'), pageHtml.indexOf('</style>'));
+  assert.match(css, /summary::-webkit-details-marker\s*\{[^}]*display:\s*none/);
+  assert.match(css, /\.panel summary\s*\{[^}]*list-style:\s*none/);
+  const closed = css.match(/\.panel summary::after\s*\{([^}]*)\}/);
+  assert.ok(closed, '要有 .panel summary::after 箭頭');
+  assert.match(closed[1], /content:/);
+  assert.match(closed[1], /rotate\(-45deg\)/, '收起朝右');
+  assert.match(css, /\.panel details\[open\]\s*>\s*summary::after\s*\{[^}]*rotate\(45deg\)/, '打開朝下');
+});
+
+test('V-3 預設：桌機打開降雨機率說明、出發地與車程、圖例說明與設定；手機收起', async () => {
+  const data = fixtureData();
+  const wide = await runPage(data, { drive: fakeDrive(data) });
+  for (const id of ['trip', 'legendBox', 'more']) assert.equal(wide.els[id].open, true, '桌機 ' + id);
+  const phone = await runPage(data, { drive: fakeDrive(data), narrow: true });
+  for (const id of ['trip', 'legendBox', 'more']) assert.equal(phone.els[id].open, false, '手機 ' + id);
+});
+
+test('V-4 出發地與車程的標題列顯示目前的選擇（收起來也看得到有沒有在篩車程）', async () => {
+  const data = fixtureData();
+  const none = await runPage(data, { drive: fakeDrive(data) });
+  assert.equal(none.els.tripState.textContent, '：未設定');
+  const saved = JSON.stringify({ county: '台北市', town: '萬華區', limit: 30 });
+  const { els } = await runPage(data, { drive: fakeDrive(data), storage: { driveTime: saved } });
+  await tick(); await tick();
+  assert.equal(els.tripState.textContent, '：台北市萬華區 · 30 分鐘內');
+  els.driveLimit.value = '';
+  els.driveLimit.onchange();
+  assert.equal(els.tripState.textContent, '：台北市萬華區');
+  els.originCounty.value = '';
+  els.originCounty.onchange();
+  await tick(); await tick();
+  assert.equal(els.tripState.textContent, '：未設定');
+});
+
+test('V-5 打開或收起降雨機率說明、出發地與車程：重畫一次（面板大小變了）', async () => {
+  const data = fixtureData();
+  const { els, rec } = await runPage(data, { drive: fakeDrive(data) });
+  for (const id of ['trip', 'legendBox']) {
+    assert.equal(typeof els[id].ontoggle, 'function', id);
+    const before = rec.markers[0];
+    els[id].ontoggle();
+    assert.notEqual(rec.markers[0], before, `${id}：沒有重畫`);
+  }
+});

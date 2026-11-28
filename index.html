@@ -81,6 +81,22 @@
   .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 5px; border: 1.5px solid var(--ink); box-sizing: border-box; flex: none; }
   .sq { border-radius: 2px; }
   .ring { background: var(--bg); border-color: var(--cold); border-width: 2.5px; }
+  /* 可以展開收起的區域：標題列右邊的箭頭，收起朝右、打開朝下；瀏覽器原本的三角形藏起來 */
+  .panel summary { list-style: none; }
+  .panel summary::-webkit-details-marker { display: none; }
+  .panel summary::after {
+    content: ''; flex: none; width: 7px; height: 7px; margin: 0 6px 0 auto;
+    border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2);
+    transform: rotate(-45deg); transition: transform .15s;
+  }
+  .panel details[open] > summary::after { transform: rotate(45deg); }
+  .fold { margin-top: 6px; border-top: 1px solid var(--hair); }
+  .fold summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 13px; color: var(--ink-2); }
+  .fold summary:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
+  #trip summary { font-size: 14px; font-weight: 600; color: var(--ink); }
+  #trip .state { font-weight: 400; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  #trip .trip { margin-top: 0; }
+  #legendBox .legend { padding-bottom: 6px; }
   .more { margin-top: 6px; border-top: 1px solid var(--hair); }
   .more summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; color: var(--ink-2); font-size: 13px; }
   .more label { display: flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
@@ -193,7 +209,9 @@
 <div class="panel">
   <h1>天氣旅圖</h1>
   <div class="days" id="days" role="group" aria-label="選擇日期"></div>
-  <div class="trip" id="trip" hidden>
+  <details class="fold" id="trip" hidden>
+  <summary>出發地與車程<span class="state" id="tripState">：未設定</span></summary>
+  <div class="trip">
     <span class="lab">出發地</span>
     <select id="originCounty" aria-label="出發的縣市"></select>
     <select id="originTown" aria-label="出發的鄉鎮市區" disabled></select>
@@ -202,16 +220,19 @@
     <button type="button" id="useLocation" hidden>📍 用我的位置</button>
   </div>
   <p class="note" id="locateNote" role="status" hidden></p>
+  </details>
   <p class="summary" id="summary" aria-live="polite"></p>
   <p class="note" id="driveNote" hidden></p>
   <p class="notice" id="notice" role="status" hidden></p>
+  <details class="fold" id="legendBox">
+  <summary>白天最高降雨機率（09:00–18:00）</summary>
   <div class="legend">
-    <span class="title">白天最高降雨機率（09:00–18:00）</span>
     <span><i class="dot c-green"></i>20% 以下</span>
     <span><i class="dot c-yellow"></i>30–50%</span>
     <span><i class="dot c-red"></i>60% 以上</span>
     <span id="legendGray"><i class="dot c-gray"></i>沒資料</span>
   </div>
+  </details>
   <details class="more" id="more">
     <summary>圖例說明與設定</summary>
     <div class="legend">
@@ -285,7 +306,9 @@
   data = SpotJoin.join(data, attractions, 4);
 
   // 桌機先把「圖例說明與設定」打開；手機收著，地圖才看得到
-  $('more').open = !narrow();
+  // 降雨機率說明、出發地與車程、圖例說明與設定：桌機打開、手機收起
+  const openFolds = () => { for (const id of ['trip', 'legendBox', 'more']) $(id).open = !narrow(); };
+  openFolds();
 
   // 先給一個大概的全台視角：要畫哪些點得先知道畫面範圍；最後面再用 fitBounds 對準
   const map = L.map('map', { zoomControl: false, zoomSnap: 0.25, center: [23.7, 120.9], zoom: 7.5 });
@@ -655,6 +678,8 @@
     $('driveNote').hidden = !driveNote;
     // 這天沒有灰色的景點，圖例就不用佔一格
     $('legendGray').hidden = summary.gray === 0;
+    // 出發地與車程收起來也看得到目前的選擇
+    $('tripState').textContent = '：' + (origin ? origin.county + origin.town + (driveLimit ? ' · ' + DriveTime.limitText(driveLimit) : '') : '未設定');
     const marks = groups.length;
     $('info').textContent = `顯示 ${drawn} / ${candidates.length} 個景點` +
       (marks !== drawn ? `（畫面上 ${marks} 個點）` : '') + '。' +
@@ -795,8 +820,10 @@
   }
   $('sheetClose').onclick = () => { closeSheet(); unselect(); };
   map.on('popupclose', unselect);
-  // 打開或收起「圖例說明與設定」「篩選景點」：面板大小變了，合併點「拉近看／看名單」要重新判斷
+  // 打開或收起「圖例說明與設定」「篩選景點」「降雨機率說明」「出發地與車程」：面板大小變了，合併點「拉近看／看名單」要重新判斷
   $('more').ontoggle = () => render();
+  $('trip').ontoggle = () => render();
+  $('legendBox').ontoggle = () => render();
   $('filters').ontoggle = () => render();
   // 使用者自己拖動或縮放（程式移動地圖不算）
   map.on('dragstart', () => { userMoved = true; });
@@ -804,7 +831,7 @@
   // 拖動、縮放地圖：重新決定畫哪些點（層、畫面上限、合併）
   map.on('moveend', () => render());
   // 手機轉向或視窗拉寬拉窄：景點資訊換到對的位置，圖例說明照新的寬度開或收
-  mq.addEventListener('change', () => { $('more').open = !narrow(); showDetail(); });
+  mq.addEventListener('change', () => { openFolds(); showDetail(); });
   // 地圖放大，標記跟著變大，比較好點
   map.on('zoomend', () => {
     const z = map.getZoom();
