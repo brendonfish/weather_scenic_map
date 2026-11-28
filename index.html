@@ -126,6 +126,7 @@
   .detail .tags span { font-size: 12px; padding: 1px 8px; border-radius: 10px; background: var(--bg-2); color: var(--ink-2); }
   .detail .site { color: var(--ink); font-size: 13px; }
   /* 座標疊在一起的景點：列出名單，點名字打開 */
+  .picklist { max-height: 340px; overflow-y: auto; }
   .picklist button { display: block; width: 100%; min-height: 44px; margin-top: 6px; padding: 0 10px; text-align: left;
     border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; cursor: pointer; }
   .picklist button:hover { background: var(--bg-2); }
@@ -439,6 +440,8 @@
 
   // 已經拉到最近（不再一般合併的級數）：只合併座標疊在一起的，點了列名單
   const atMax = () => map.getZoom() >= map.getMaxZoom() - 1;
+  // 點合併的點：景點少（listMax 以下）、或已經拉到鄉鎮尺度（zoomCap），就列名單；不然拉近
+  const listsOnClick = (members) => atMax() || members.length <= CFG.listMax || map.getZoom() >= CFG.zoomCap;
 
   // 座標疊在一起、拉到最近也分不開的景點：列出名單，點名字打開那個景點
   let pickList = null; // 名單開著時是名單裡的景點
@@ -479,10 +482,9 @@
     Promise.resolve().then(() => { if (!selected && was) render(); });
   }
 
-  // 合併的點：點了拉近到這幾個景點的範圍；已經拉到最近還疊在一起，就列名單
+  // 合併的點：景點少或已經拉到鄉鎮尺度就列名單；不然拉近到這幾個景點的範圍（最多到鄉鎮尺度）
   function zoomInto(members) {
-    // 已經拉到最近還疊在一起：列名單
-    if (atMax()) return showPickList(members);
+    if (listsOnClick(members)) return showPickList(members);
     const lats = members.map((m) => m.lat);
     const lngs = members.map((m) => m.lng);
     // 跟一開始對準全台一樣避開左上的面板，拉近後的景點才不會被面板蓋住
@@ -490,7 +492,7 @@
     map.fitBounds([[Math.min(...lats), Math.min(...lngs)], [Math.max(...lats), Math.max(...lngs)]], {
       paddingTopLeft: narrow() ? [40, panel.offsetHeight + 40] : [panel.offsetWidth + 40, 40],
       paddingBottomRight: [40, 40],
-      maxZoom: map.getMaxZoom(),
+      maxZoom: CFG.zoomCap, // 最多拉到鄉鎮尺度，不拉到街道
     });
   }
 
@@ -545,7 +547,7 @@
         const n = g.members.length;
         const sel = g.members.includes(selected);
         const icon = L.divIcon({ className: 'spot', html: `<div class="cluster c-${color}${sel ? ' sel' : ''}" data-color="${color}">${n}</div>`, iconSize: [40, 40], iconAnchor: [20, 20] });
-        L.marker([s.lat, s.lng], { icon, title: `${n} 個景點：${atMax() ? '點了看名單' : '點了拉近看'}`, zIndexOffset: (sel ? 1000 : 500) + Z_ORDER[color] })
+        L.marker([s.lat, s.lng], { icon, title: `${n} 個景點：${listsOnClick(g.members) ? '點了看名單' : '點了拉近看'}`, zIndexOffset: (sel ? 1000 : 500) + Z_ORDER[color] })
           .on('click', () => zoomInto(g.members))
           .addTo(layer);
         continue;

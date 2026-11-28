@@ -158,7 +158,7 @@ test('L-10 網頁：全台只畫第 1 層；打開篩選時放寬一級，第 2 
   assert.deepEqual(rec.markers.map((m) => m.opts.title.split('：')[0]).sort(), ['一層', '二層']);
 });
 
-test('L-11 網頁：畫面上限 30 個，太近的合併成帶數字的點，點了拉近', async () => {
+test('L-11 網頁：畫面上限 30 個，太近的合併成帶數字的點；景點少（10 個以下）點了列名單、不拉近', async () => {
   const attractions = [];
   for (let i = 0; i < 40; i++) attractions.push(place({ id: `F${i}`, name: `遠${i}`, layer: 1, lat: 21 + i * 0.2, lng: 120 + (i % 5) * 0.4, setting: '戶外', visitors: 1 }));
   attractions.push(place({ id: 'N1', name: '近1', layer: 1, lat: 25.0, lng: 121.5, setting: '戶外', visitors: 1, richness: 6 }));
@@ -168,9 +168,13 @@ test('L-11 網頁：畫面上限 30 個，太近的合併成帶數字的點，�
   const cluster = rec.markers.find((m) => /cluster/.test(m.opts.icon.html));
   assert.ok(cluster, '有合併的點');
   assert.match(cluster.opts.icon.html, />2</);
-  assert.match(cluster.opts.title, /2 個景點/);
+  assert.match(cluster.opts.title, /2 個景點：點了看名單/);
+  rec.calls.length = 0; // 一打開網頁對準全台的那一次不算
   cluster.handlers.click();
-  assert.ok(rec.calls.includes('fitBounds') || rec.calls.includes('setView'));
+  // 2026-11-28 Ray：一個點有好幾個景點時，點了列名單，不要拉到太細的尺度（卡片 NcGEXBn9）
+  assert.ok(!rec.calls.includes('fitBounds') && !rec.calls.includes('setView'), rec.calls.join(','));
+  assert.match(rec.popupHtml, /data-pick="N1"/);
+  assert.match(rec.popupHtml, /data-pick="N2"/);
   assert.match(els.info.textContent, /畫面上 30 個點/);
   assert.match(els.info.textContent, /拉近/);
 });
@@ -365,14 +369,28 @@ test('L-23 座標完全一樣的景點：拉到最近還疊在一起，點那個
   assert.match(rec.popupHtml, /<div class="name">慈湖陵寢/);
 });
 
-test('L-24 還沒拉到最近時，疊在一起的點照舊是點了拉近', async () => {
-  const attractions = [
-    place({ id: 'H1', name: '慈湖', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
-    place({ id: 'H2', name: '慈湖陵寢', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
-  ];
-  const { rec } = await runPage(forecast, { attractions, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 12 });
+// 很多個景點擠在一起（超過 10 個）
+const crowd = (n, lat = 25.0, lng = 121.5) => Array.from({ length: n }, (_, i) => place({ id: `C${i}`, name: `擠${i}`, layer: 1, lat: lat + i * 0.0002, lng: lng + i * 0.0002, setting: '戶外', visitors: 1 }));
+
+test('L-24 景點多（超過 10 個）：點了拉近，但最多拉到鄉鎮尺度（13 級），不拉到街道', async () => {
+  const { rec } = await runPage(forecast, { attractions: crowd(12), mapConfig: { cap: 30, clusterPx: 36 }, zoom: 8 });
+  assert.equal(rec.markers.length, 1);
+  assert.match(rec.markers[0].opts.title, /12 個景點：點了拉近看/);
+  rec.calls.length = 0;
   rec.markers[0].handlers.click();
   assert.ok(rec.calls.includes('fitBounds'));
+  assert.equal(rec.lastFitOpts.maxZoom, ML.DEFAULTS.zoomCap);
+  assert.equal(ML.DEFAULTS.zoomCap, 13);
+  assert.equal(ML.DEFAULTS.listMax, 10);
+});
+
+test('L-32 已經拉到鄉鎮尺度（13 級以上），景點多的點也直接列名單（不然點了沒反應）', async () => {
+  const { rec } = await runPage(forecast, { attractions: crowd(12), mapConfig: { cap: 30, clusterPx: 36 }, zoom: 13 });
+  assert.match(rec.markers[0].opts.title, /12 個景點：點了看名單/);
+  rec.calls.length = 0;
+  rec.markers[0].handlers.click();
+  assert.ok(!rec.calls.includes('fitBounds'));
+  assert.equal((rec.popupHtml.match(/data-pick=/g) || []).length, 12);
 });
 
 for (const narrow of [false, true]) {
@@ -404,10 +422,7 @@ for (const narrow of [false, true]) {
 }
 
 test('L-26 點合併的點拉近：避開左上的面板（跟一開始對準全台一樣）', async () => {
-  const attractions = [
-    place({ id: 'A', name: '甲', layer: 1, lat: 25.0, lng: 121.5, setting: '戶外', visitors: 1 }),
-    place({ id: 'B', name: '乙', layer: 1, lat: 25.0001, lng: 121.5001, setting: '戶外', visitors: 1 }),
-  ];
+  const attractions = crowd(12);
   for (const narrow of [false, true]) {
     const { rec } = await runPage(forecast, { attractions, mapConfig: { cap: 30, clusterPx: 40 }, zoom: 8, narrow });
     rec.markers[0].handlers.click();
