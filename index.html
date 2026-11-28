@@ -127,6 +127,9 @@
   .detail .site { color: var(--ink); font-size: 13px; }
   /* 座標疊在一起的景點：列出名單，點名字打開 */
   .picklist { max-height: 340px; overflow-y: auto; }
+  .detail .back { display: block; min-height: 40px; margin: 0 0 8px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+  .detail .back:hover { background: var(--bg-2); }
   .picklist button { display: block; width: 100%; min-height: 44px; margin-top: 6px; padding: 0 10px; text-align: left;
     border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font: inherit; cursor: pointer; }
   .picklist button:hover { background: var(--bg-2); }
@@ -348,7 +351,9 @@
     const types = s.types && s.types.length ? s.types : [];
     const icon = esc(MapLayers.typeIcon(types[0]));
     // 縮圖直接連觀光署的照片網址；載不到就藏起來，換成類型的圖示
-    let html = '<div class="detail">' + (more.image && more.image.url
+    const backBtn = backList && backList.includes(s)
+      ? `<button type="button" class="back" data-back-list>← 回到名單（${backList.length} 個景點）</button>` : '';
+    let html = '<div class="detail">' + backBtn + (more.image && more.image.url
       ? `<img class="thumb" src="${esc(more.image.url)}" alt="${esc(more.image.name || s.name)}" width="260" height="150" loading="lazy" referrerpolicy="no-referrer"` +
         ` onerror="this.hidden=true;this.nextElementSibling.hidden=false"><div class="thumb-icon" hidden aria-hidden="true">${icon}</div>`
       : `<div class="thumb-icon" aria-hidden="true">${icon}</div>`) +
@@ -469,6 +474,7 @@
 
   // 座標疊在一起、拉到最近也分不開的景點：列出名單，點名字打開那個景點
   let pickList = null; // 名單開著時是名單裡的景點
+  let backList = null; // 從名單點進景點資訊時，記住那份名單，資訊框上面可以按「回到名單」
   function closePickList() {
     if (!pickList) return;
     pickList = null;
@@ -484,12 +490,21 @@
       members.map((m) => `<button type="button" data-pick="${esc(m.id)}">${esc(m.name)}</button>`).join('') + '</div>';
     openPanel(html, [members[0].lat, members[0].lng]);
   }
-  // 資訊框會擋住點擊往外傳，所以在捕獲階段接
+  // 名單的按鈕和「回到名單」：資訊框會擋住點擊往外傳，所以在捕獲階段接
   document.addEventListener('click', (e) => {
-    const b = e.target && e.target.closest ? e.target.closest('[data-pick]') : null;
+    const closest = (sel) => (e.target && e.target.closest ? e.target.closest(sel) : null);
+    if (closest('[data-back-list]')) {
+      if (!backList) return;
+      const members = backList;
+      backList = null;
+      showPickList(members);
+      return;
+    }
+    const b = closest('[data-pick]');
     if (!b) return;
     const s = data.spots.find((x) => x.id === b.dataset.pick);
     if (!s) return;
+    backList = pickList && pickList.includes(s) ? pickList : null;
     pickList = null;
     selected = s;
     render();
@@ -499,7 +514,7 @@
   // 資訊框被關掉（按 ×、點地圖、點別的點）。點別的點時 Leaflet 先關資訊框、再把點擊送到那個點，
   // 這時馬上重畫會把被點的點拿掉、點擊就送不到；所以等這次點擊處理完再重畫。
   function unselect() {
-    if (!reopening) pickList = null;
+    if (!reopening) { pickList = null; backList = null; }
     if (reopening || !selected) return;
     const was = selected;
     selected = null;
@@ -535,6 +550,7 @@
     }
     // 名單裡有景點不再顯示（篩掉、縮小到不畫那一層）：名單也收起來
     if (pickList && !pickList.every((m) => visible.includes(m))) closePickList();
+    if (backList && !backList.every((m) => visible.includes(m))) backList = null;
     // 只畫畫面裡的；太近的合併，最多 CFG.cap 個點。拉到最近只合併座標疊在一起的（1 像素內），點了列名單。
     const bounds = map.getBounds();
     const inView = visible.filter((s) => bounds.contains([s.lat, s.lng]));
@@ -578,7 +594,7 @@
       });
       // title 也寫出結論：不靠顏色、用螢幕報讀也知道會不會下雨
       L.marker([s.lat, s.lng], { icon, title: `${s.name}：${SpotView.verdict(day)}`, zIndexOffset: (s === selected ? 1000 : 0) + Z_ORDER[color] })
-        .on('click', () => { selected = s; render(); showDetail(); })
+        .on('click', () => { backList = null; selected = s; render(); showDetail(); })
         .addTo(layer);
     }
     // 摘要只算熱門景點（第 1 層），拖動、縮放地圖時不會跟著跳

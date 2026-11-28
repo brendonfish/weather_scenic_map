@@ -539,3 +539,61 @@ test('L-37 打開或收起「圖例說明與設定」「篩選景點」：重畫
     assert.notEqual(rec.markers[0], before, `${id}：沒有重畫`);
   }
 });
+
+// ---- 卡片 https://trello.com/c/PKnw1n7J ：從名單點進景點資訊以後，可以回到名單 ----
+
+const back = (rec) => rec.docOn.click({ target: { closest: (sel) => (sel === '[data-back-list]' ? {} : null) } });
+const trio = [
+  place({ id: 'H1', name: '慈湖', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
+  place({ id: 'H2', name: '慈湖陵寢', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
+  place({ id: 'H3', name: '大溪慈湖步道', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1 }),
+];
+
+for (const narrow of [false, true]) {
+  test(`L-38 從名單點進景點（${narrow ? '手機' : '桌機'}）：最上面有「回到名單」，按了回到同一份名單，再點別的也有`, async () => {
+    const { els, rec } = await runPage(forecast, { attractions: trio, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 12, narrow });
+    const shown = () => (narrow ? els.sheetBody.innerHTML : rec.popupHtml);
+    rec.markers[0].handlers.click();
+    pick(rec, 'H2');
+    assert.match(shown(), /<div class="name">慈湖陵寢/);
+    assert.match(shown(), /data-back-list[^>]*>← 回到名單（3 個景點）</);
+    assert.ok(shown().indexOf('data-back-list') < shown().indexOf('<div class="name">'), '按鈕在最上面');
+    back(rec);
+    assert.match(shown(), /這裡有 3 個景點/);
+    for (const id of ['H1', 'H2', 'H3']) assert.match(shown(), new RegExp(`data-pick="${id}"`));
+    pick(rec, 'H3');
+    assert.match(shown(), /<div class="name">大溪慈湖步道/);
+    assert.match(shown(), /data-back-list/);
+  });
+}
+
+test('L-39 直接點地圖上的景點打開資訊：沒有「回到名單」；從名單點進去、關掉以後再直接點：也沒有', async () => {
+  const solo = [place({ id: 'S1', name: '單獨', layer: 1, lat: 23.0, lng: 120.2, setting: '戶外', visitors: 1 }), ...trio];
+  const { rec } = await runPage(forecast, { attractions: solo, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 12 });
+  rec.markers.find((m) => m.opts.title.startsWith('單獨')).handlers.click();
+  assert.doesNotMatch(rec.popupHtml, /data-back-list/);
+  rec.markers.find((m) => /個景點/.test(m.opts.title)).handlers.click();
+  pick(rec, 'H1');
+  assert.match(rec.popupHtml, /data-back-list/);
+  rec.mapOn.popupclose();
+  await tick();
+  rec.markers.find((m) => m.opts.title.startsWith('單獨')).handlers.click();
+  assert.doesNotMatch(rec.popupHtml, /data-back-list/);
+});
+
+test('L-40 名單裡的景點被篩掉（名單已經不成立）：資訊框不顯示「回到名單」', async () => {
+  const mixed = [
+    place({ id: 'M1', name: '古蹟', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1, types: ['古蹟文化'] }),
+    place({ id: 'M2', name: '山林', layer: 1, lat: 24.84037, lng: 121.29427, setting: '戶外', visitors: 1, types: ['自然山林'] }),
+  ];
+  const { els, rec } = await runPage(forecast, { attractions: mixed, mapConfig: { cap: 30, clusterPx: 36 }, zoom: 12 });
+  rec.markers[0].handlers.click();
+  pick(rec, 'M1');
+  assert.match(rec.popupHtml, /data-back-list/);
+  const box = els.typeFilters.children.map((l) => l.children[0]).find((b) => b.value === '自然山林');
+  box.checked = false;
+  box.onchange();
+  // 選到的「古蹟」還在，資訊框重新顯示（換日期）時不再有回到名單
+  els.days.children[0].onclick();
+  assert.doesNotMatch(rec.popupHtml, /data-back-list/);
+});
