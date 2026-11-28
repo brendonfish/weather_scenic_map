@@ -779,9 +779,9 @@ test('S-11 注音組字還沒選字時不重畫（不清掉地圖和打開的景
   els.search.value = '行天宮';
   els.search.oninput({ isComposing: false });
   assert.deepEqual(markerNames(rec).sort(), ['行天宮', '行天宮北投分宮_忠義廟']);
-  // 有些瀏覽器選完字只送 compositionend
+  // 有些瀏覽器選完字只送 compositionend（要用 addEventListener 掛，沒有 oncompositionend 這個屬性）
   els.search.value = '北投';
-  els.search.oncompositionend();
+  els.search.listeners.compositionend({});
   assert.deepEqual(markerNames(rec), ['行天宮北投分宮_忠義廟']);
 });
 
@@ -860,4 +860,19 @@ test('R-3 「只看好天氣」改成「只留好天氣景點」、「只看戶�
   assert.match(html, /id="onlyGood"> 只留好天氣景點（選定那天是綠色的）<\/label>/);
   assert.match(html, /id="hideIndoor"> 只留戶外景點（隱藏室內、商圈、夜市、老街）<\/label>/);
   assert.doesNotMatch(html, /只看好天氣|只看戶外景點/);
+});
+
+test('S-13 手機注音選字：每個 input 都還在組字中，選完字只送 compositionend，也要搜（Ray 2026-11-28 iPhone 實測）', async () => {
+  const { els, rec } = await runPage(forecast, { attractions: temples, zoom: 7.5 });
+  // 打注音、選字：瀏覽器送的 input 全部 isComposing: true
+  for (const v of ['ㄒ', 'ㄒㄧㄥ', '行', '行ㄊ', '行天', '行天宮']) {
+    els.search.value = v;
+    els.search.oninput({ isComposing: true });
+  }
+  assert.equal(typeof els.search.listeners.compositionend, 'function', '要用 addEventListener 掛 compositionend');
+  els.search.listeners.compositionend({ data: '行天宮' });
+  assert.deepEqual(markerNames(rec).sort(), ['行天宮', '行天宮北投分宮_忠義廟']);
+  assert.match(els.searchResults.innerHTML, /共 2 個符合/);
+  // 沒有 oncompositionend 這個屬性，設了也不會觸發
+  assert.doesNotMatch(html, /\.oncompositionend\s*=/);
 });

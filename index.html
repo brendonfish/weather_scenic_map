@@ -358,7 +358,9 @@
   // 搜尋框：打字就重畫；清除回到原本的樣子
   // 注音、倉頡組字還沒選字時不重畫（不然會先搜「ㄒ」，地圖清空、打開的景點被關掉）；選完字再畫
   $('search').oninput = (e) => { if (!(e && e.isComposing)) render(); };
-  $('search').oncompositionend = () => render();
+  // 選完字：手機注音最後一個 input 還帶著 isComposing，只有 compositionend 會來。
+  // HTML 沒有 oncompositionend 這個屬性，一定要用 addEventListener 掛。
+  $('search').addEventListener('compositionend', () => render());
   $('searchClear').onclick = () => { $('search').value = ''; render(); };
 
   // 景點的照片、描述、網站在 public/attraction-details.js，第一次點開景點才載入（景點檔太大，拆開）
