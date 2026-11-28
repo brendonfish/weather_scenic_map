@@ -94,7 +94,9 @@
   .fold summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; font-size: 13px; color: var(--ink-2); }
   .fold summary:focus-visible { outline: 3px solid var(--cold); outline-offset: -3px; }
   #trip summary { font-size: 14px; font-weight: 600; color: var(--ink); }
-  #trip .state { font-weight: 400; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  #trip .label { flex: none; white-space: nowrap; }
+  /* 目前的選擇放不下就換到第二行（不省略）；keep-all 讓中文不在字中間斷，只在空白（「·」兩邊）斷 */
+  #trip .state { font-weight: 400; color: var(--ink-2); min-width: 0; word-break: keep-all; }
   #trip .trip { margin-top: 0; }
   #legendBox .legend { padding-bottom: 6px; }
   .more { margin-top: 6px; border-top: 1px solid var(--hair); }
@@ -210,7 +212,7 @@
   <h1>天氣旅圖</h1>
   <div class="days" id="days" role="group" aria-label="選擇日期"></div>
   <details class="fold" id="trip" hidden>
-  <summary>出發地與車程<span class="state" id="tripState">：未設定</span></summary>
+  <summary><span class="label">出發地與車程</span><span class="state" id="tripState">：未設定</span></summary>
   <div class="trip">
     <span class="lab">出發地</span>
     <select id="originCounty" aria-label="出發的縣市"></select>
@@ -679,7 +681,8 @@
     // 這天沒有灰色的景點，圖例就不用佔一格
     $('legendGray').hidden = summary.gray === 0;
     // 出發地與車程收起來也看得到目前的選擇
-    $('tripState').textContent = '：' + (origin ? origin.county + origin.town + (driveLimit ? ' · ' + DriveTime.limitText(driveLimit) : '') : '未設定');
+    $('tripState').textContent = '：' + (origin ? origin.county + origin.town + (driveLimit ? ' · ' + DriveTime.limitText(driveLimit).replace(/ /g, '\u00a0') : '')
+      : driveFailed ? $('originCounty').value + $('originTown').value + '（車程讀不到）' : '未設定');
     const marks = groups.length;
     $('info').textContent = `顯示 ${drawn} / ${candidates.length} 個景點` +
       (marks !== drawn ? `（畫面上 ${marks} 個點）` : '') + '。' +
@@ -756,6 +759,8 @@
   function locateNote(text) {
     $('locateNote').textContent = text;
     $('locateNote').hidden = !text;
+    // 說明收在出發地與車程裡面：等位置時被收起來，結果出來要打開才看得到
+    if (text) $('trip').open = true;
   }
   let asking = 0; // 連續換出發地時，只認最後一次
   async function setOrigin(county, town) {

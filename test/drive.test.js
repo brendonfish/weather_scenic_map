@@ -346,7 +346,7 @@ test('V-1 四個可以展開收起的區域都是 details，有標題列 summary
   // 降雨機率說明：標題列是那行說明，四個顏色收在裡面
   assert.match(pageHtml, /<details[^>]*id="legendBox"[^>]*>\s*<summary[^>]*>白天最高降雨機率（09:00–18:00）<\/summary>[\s\S]*?c-green[\s\S]*?id="legendGray"[\s\S]*?<\/details>/);
   // 出發地與車程：選單和「用我的位置」的說明都收在裡面
-  assert.match(pageHtml, /<details[^>]*id="trip"[^>]*>\s*<summary[^>]*>出發地與車程<span[^>]*id="tripState"[\s\S]*?id="originCounty"[\s\S]*?id="useLocation"[\s\S]*?id="locateNote"[\s\S]*?<\/details>/);
+  assert.match(pageHtml, /<details[^>]*id="trip"[^>]*>\s*<summary[^>]*><span class="label">出發地與車程<\/span><span[^>]*id="tripState"[\s\S]*?id="originCounty"[\s\S]*?id="useLocation"[\s\S]*?id="locateNote"[\s\S]*?<\/details>/);
 });
 
 test('V-2 標題列有箭頭：收起朝右、打開朝下；瀏覽器原本的三角形藏起來（不會出現兩個）', () => {
@@ -375,7 +375,7 @@ test('V-4 出發地與車程的標題列顯示目前的選擇（收起來也看�
   const saved = JSON.stringify({ county: '台北市', town: '萬華區', limit: 30 });
   const { els } = await runPage(data, { drive: fakeDrive(data), storage: { driveTime: saved } });
   await tick(); await tick();
-  assert.equal(els.tripState.textContent, '：台北市萬華區 · 30 分鐘內');
+  assert.equal(els.tripState.textContent.replace(/\u00a0/g, ' '), '：台北市萬華區 · 30 分鐘內');
   els.driveLimit.value = '';
   els.driveLimit.onchange();
   assert.equal(els.tripState.textContent, '：台北市萬華區');
@@ -394,4 +394,47 @@ test('V-5 打開或收起降雨機率說明、出發地與車程：重畫一次�
     els[id].ontoggle();
     assert.notEqual(rec.markers[0], before, `${id}：沒有重畫`);
   }
+});
+
+// 檢查找到的問題（2026-11-28）
+test('V-6 出發地與車程的標題不會被擠到換行：標題包在不縮的 span 裡，只有目前的選擇會被省略', () => {
+  assert.match(pageHtml, /<summary[^>]*><span class="label">出發地與車程<\/span><span class="state" id="tripState">/);
+  const css = pageHtml.slice(pageHtml.indexOf('<style>'), pageHtml.indexOf('</style>'));
+  assert.match(css, /#trip \.label\s*\{[^}]*flex:\s*none[^}]*white-space:\s*nowrap/);
+});
+
+test('V-7 用我的位置的結果出來時，出發地與車程是收起來的：自動打開，看得到說明', async () => {
+  const data = fixtureData();
+  for (const answer of [1, { lat: 25.12, lng: 121.51 }]) {
+    const { els } = await runPage(data, { drive: fakeDrive(data), geo: fakeGeo(answer), narrow: true });
+    els.trip.open = true;
+    els.useLocation.onclick();
+    els.trip.open = false; // 等的時候收起來
+    await tick(); await tick(); await tick();
+    assert.equal(els.locateNote.hidden, false);
+    assert.equal(els.trip.open, true, JSON.stringify(answer));
+  }
+});
+
+test('V-9 目前的選擇放不下時換到第二行（不省略），只在「·」斷開，「30 分鐘內」不拆開', async () => {
+  const css = pageHtml.slice(pageHtml.indexOf('<style>'), pageHtml.indexOf('</style>'));
+  const rule = css.match(/#trip \.state\s*\{([^}]*)\}/);
+  assert.ok(rule);
+  assert.doesNotMatch(rule[1], /ellipsis|nowrap/);
+  assert.match(rule[1], /word-break:\s*keep-all/);
+  const data = fixtureData();
+  const saved = JSON.stringify({ county: '台北市', town: '萬華區', limit: 30 });
+  const { els } = await runPage(data, { drive: fakeDrive(data), storage: { driveTime: saved } });
+  await tick(); await tick();
+  assert.equal(els.tripState.textContent, '：台北市萬華區 · 30\u00a0分鐘內');
+});
+
+test('V-8 車程檔讀不到：標題列不寫「未設定」，寫選了哪裡、車程讀不到', async () => {
+  const data = fixtureData();
+  const drive = fakeDrive(data);
+  delete drive.times.台北市;
+  const saved = JSON.stringify({ county: '台北市', town: '萬華區', limit: 60 });
+  const { els } = await runPage(data, { drive, storage: { driveTime: saved } });
+  await tick(); await tick();
+  assert.equal(els.tripState.textContent, '：台北市萬華區（車程讀不到）');
 });
