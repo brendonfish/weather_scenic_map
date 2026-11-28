@@ -408,6 +408,7 @@
       popup = null;
       $('sheetBody').innerHTML = html;
       $('sheet').hidden = false;
+      $('sheet').scrollTop = 0; // 換內容從最上面開始（名單捲到下面再點名字時，「回到名單」才看得到）
       const h = $('sheet').offsetHeight;
       document.documentElement.style.setProperty('--sheet-h', h + 'px');
       map.panInside(at, sheetPad(h));
@@ -427,19 +428,21 @@
 
   // 詳細資料晚到：只換內容，不重新打開。照片會把資訊框撐高：使用者沒動過地圖，就照常把選到的點移到看得見的地方；
   // 使用者已經自己拖動或縮放，就不移動地圖（不把他拉回去）。
-  function refreshDetail() {
+  // stay：只換內容、一定不移動地圖（例如重畫時「回到名單」不成立了，要把按鈕拿掉）
+  function refreshDetail(stay) {
     const html = detailHtml(selected, dayOf(selected));
+    const moved = userMoved || stay;
     if (narrow()) {
       if ($('sheet').hidden) return;
       $('sheetBody').innerHTML = html;
       const h = $('sheet').offsetHeight;
       document.documentElement.style.setProperty('--sheet-h', h + 'px');
-      if (!userMoved) {
+      if (!moved) {
         map.panInside([selected.lat, selected.lng], sheetPad(h));
       }
     } else if (popup && popup.isOpen()) {
       const autoPan = popup.options.autoPan;
-      if (userMoved) popup.options.autoPan = false;
+      if (moved) popup.options.autoPan = false;
       popup.setContent(html);
       popup.options.autoPan = autoPan;
     }
@@ -550,10 +553,12 @@
     }
     // 名單裡有景點不再顯示（篩掉、縮小到不畫那一層）：名單也收起來
     if (pickList && !pickList.every((m) => visible.includes(m))) closePickList();
-    if (backList && !backList.every((m) => visible.includes(m))) backList = null;
     // 只畫畫面裡的；太近的合併，最多 CFG.cap 個點。拉到最近只合併座標疊在一起的（1 像素內），點了列名單。
     const bounds = map.getBounds();
     const inView = visible.filter((s) => bounds.contains([s.lat, s.lng]));
+    // 名單裡有景點被篩掉、不畫那一層、或不在畫面上：名單不成立，「回到名單」拿掉（回去會把地圖帶到別的地方）
+    const dropBack = backList && !backList.every((m) => inView.includes(m));
+    if (dropBack) backList = null;
     const toPoint = (s) => map.latLngToContainerPoint([s.lat, s.lng]);
     const placed = MapLayers.place(inView, toPoint, { cap: CFG.cap, clusterPx: atMax() ? 1 : CFG.clusterPx });
     // 選到的景點一定畫出來：被畫面上限擠掉就補上；在合併的點裡就拆出來單獨畫，其他的照樣合併。
@@ -613,6 +618,7 @@
       (marks !== drawn ? `（畫面上 ${marks} 個點）` : '') + '。' +
       (placed.overflow ? `還有 ${placed.overflow} 個景點，拉近才看得到。` : '') +
       DayLabels.updatedText(data.generatedAt);
+    if (dropBack && selected) refreshDetail(true);
   }
 
   if (data.source === 'fixture') {
