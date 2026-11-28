@@ -40,7 +40,7 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const els = {};
   const el = () => ({
-    textContent: '', innerHTML: '', value: '', checked: false, hidden: false, disabled: false, open: false, children: [], onclick: null, onchange: null,
+    textContent: '', innerHTML: '', value: '', checked: false, hidden: false, disabled: false, open: false, children: [], onclick: null, onchange: null, scrollTop: 0,
     offsetHeight: 0, offsetWidth: 0, parentNode: panelSize ? { offsetHeight: panelSize.y, offsetWidth: panelSize.x } : { offsetHeight: 0, offsetWidth: 0 },
     attrs: {}, listeners: {},
     setAttribute(k, v) { this.attrs[k] = v; },
@@ -63,7 +63,9 @@ export async function runPage(input, { narrow = false, drive = null, storage = {
     getSize: () => mapSize,
     // 假地圖：整個台灣都在畫面裡；投影用簡單的等距，1 度 ≈ 256 × 2^zoom / 360 像素
     // 跟真的 Leaflet 一樣：還沒設定中心和縮放就問範圍會丟錯
-    getBounds() { if (!map.loaded) throw new Error('Set map center and zoom first.'); return { contains: () => true }; },
+    // 畫面範圍：預設整個台灣都在畫面裡；測試可以換掉 rec.map.inView([lat, lng]) 模擬拉近、拖走
+    inView: () => true,
+    getBounds() { if (!map.loaded) throw new Error('Set map center and zoom first.'); return { contains: (ll) => map.inView(ll) }; },
     latLngToContainerPoint([lat, lng]) { const k = 256 * 2 ** map.zoom / 360; return { x: lng * k, y: -lat * k }; },
   };
   rec.map = map;
